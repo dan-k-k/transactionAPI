@@ -82,10 +82,13 @@ Uploads a CSV file for processing. The processing is handled in the background, 
 
 - **Request Body:** `multipart/form-data` with a `file` key.
 
-**Example using curl (new terminal):**
+**Example using `curl` (new terminal):**
 
 ```Bash
 curl -X POST -F "file=@/path/to/your/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
+
+# For example:
+curl -X POST -F "file=@/Users/danking/VS Code Projects/suadeChallengeTemp/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
 ```
 **Success Response (200 OK):**
 
@@ -115,7 +118,7 @@ Returns summary statistics for a given user within a specified date range.
 # user_id=123, start_date=2025-01-01, end_date=2025-12-31
 curl "http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31"
 ```
-**Success Response (200 OK):**
+**Example Success Response (200 OK):**
 
 ```JSON
 {
