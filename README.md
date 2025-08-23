@@ -19,7 +19,7 @@ This project is a RESTful API service built with Python and FastAPI. It provides
 
 * **Language**: Python 3.10+
 * **API Framework**: FastAPI
-* **Data Processing**: Pandas
+* **Data Processing**: pandas
 * **Database**: SQLite with SQLAlchemy
 * **Testing**: Pytest
 
