@@ -35,11 +35,12 @@ Follow these steps to set up the project environment locally.
 
 **2. Clone the Repository:**
 ```sh
-git clone <your-repository-url>
+git clone https://github.com/dan-k-k/transactionAPI
 cd suadeChallenge
+```
 3. Create and Activate a Virtual Environment:
 
-Bash
+```Bash
 # For macOS/Linux
 python3 -m venv venv
 source venv/bin/activate
@@ -47,21 +48,25 @@ source venv/bin/activate
 # For Windows
 python -m venv venv
 .\venv\Scripts\activate
+```
 4. Install Dependencies:
 All required packages are listed in requirements.txt.
 
-Bash
+```Bash
 pip install -r requirements.txt
+```
 5. Generate Sample Data (Optional):
 A script is provided to generate a dummy_transactions.csv file with 1 million records for testing.
 
-Bash
+```Bash
 python generate_data.py
+```
 Running the Application
 To run the FastAPI server, use uvicorn:
 
-Bash
+```Bash
 uvicorn app.main:app --reload
+```
 The API will be available at http://127.0.0.1:8000. You can access the interactive Swagger UI documentation at http://127.0.0.1:8000/docs.
 
 API Usage and Endpoints
@@ -75,14 +80,16 @@ Request Body: multipart/form-data with a file key.
 
 Example using curl:
 
-Bash
+```Bash
 curl -X POST -F "file=@/path/to/your/dummy_transactions.csv" [http://127.0.0.1:8000/upload](http://127.0.0.1:8000/upload)
+```
 Success Response (200 OK):
 
-JSON
+```JSON
 {
   "message": "File 'dummy_transactions.csv' accepted and is being processed in the background."
 }
+```
 2. Get User Summary
 
 Returns summary statistics for a given user within a specified date range.
@@ -99,29 +106,33 @@ end_date (string, YYYY-MM-DD)
 
 Example using curl:
 
-Bash
+```Bash
 curl "[http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31](http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31)"
+```
 Success Response (200 OK):
 
-JSON
+```JSON
 {
   "user_id": 123,
   "max_transaction": 495.5,
   "min_transaction": 10.25,
   "mean_transaction": 251.73
 }
+```
 Error Response (404 Not Found):
 If no transactions are found for the user in the given range.
 
-JSON
+```JSON
 {
   "detail": "No transactions found for user in the given date range."
 }
+```
 Running the Tests
 The project includes a comprehensive test suite. To run the tests, execute the following command from the root directory:
 
-Bash
+```Bash
 pytest -v
+```
 The tests run against a clean, in-memory SQLite database to ensure isolation and speed.
 
 Design Choices and Key Decisions 🧠
