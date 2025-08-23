@@ -112,6 +112,7 @@ Returns summary statistics for a given user within a specified date range.
 **Example using `curl`:**
 
 ```Bash
+# user_id=123, start_date=2025-01-01, end_date=2025-12-31
 curl "http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31"
 ```
 **Success Response (200 OK):**
