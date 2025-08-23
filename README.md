@@ -1,6 +1,6 @@
 # Transaction Analysis API for Suade Challenge
 
-This project is a RESTful API service built with Python and FastAPI. It provides endpoints to upload a large CSV file of e-commerce transactions and retrieve summarized statistics for specific users within a given date range.
+This project is a RESTful API service built with Python and FastAPI. It provides endpoints to upload a large CSV file of e-commerce transactions and retrieve summarised statistics for specific users within a given date range.
 
 ---
 
