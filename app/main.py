@@ -48,7 +48,10 @@ async def upload_csv(
         # 2. Read the file contents into memory
         contents = await file.read()
         
-        # 3. Add the heavy processing function to run in the background
+        # 3. Validate CSV format before processing
+        processing.validate_csv_format(contents)
+        
+        # 4. Add the heavy processing function to run in the background
         background_tasks.add_task(processing.process_csv_to_db, contents, engine)
         background_tasks.add_task(processing.create_database_indexes, engine)
 
@@ -56,6 +59,9 @@ async def upload_csv(
             "message": f"File '{file.filename}' accepted and is being processed in the background."
         }
 
+    except ValueError as e:
+        # Handle CSV validation errors
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         # If anything goes wrong, return a server error
         raise HTTPException(status_code=500, detail=f"An error occurred during file processing: {e}")
@@ -73,6 +79,13 @@ def get_summary(
     - **start_date**: Start date for the analysis (YYYY-MM-DD)
     - **end_date**: End date for the analysis (YYYY-MM-DD)
     """
+    # Add validation check for date logic
+    if start_date > end_date:
+        raise HTTPException(
+            status_code=400,
+            detail="start_date cannot be after end_date"
+        )
+    
     # Use parameterised query to prevent SQL injection
     query = text("""
     SELECT

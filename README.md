@@ -82,7 +82,7 @@ Uploads a CSV file for processing. The processing is handled in the background, 
 
 - **Request Body:** `multipart/form-data` with a `file` key.
 
-**Example using curl:**
+**Example using curl (new terminal):**
 
 ```Bash
 curl -X POST -F "file=@/path/to/your/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
