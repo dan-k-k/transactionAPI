@@ -36,7 +36,7 @@ Follow these steps to set up the project environment locally.
 **2. Clone the Repository:**
 ```sh
 git clone https://github.com/dan-k-k/transactionAPI
-cd suadeChallenge
+cd transactionAPI
 ```
 **3. Create and Activate a Virtual Environment:**
 
@@ -56,7 +56,7 @@ All required packages are listed in requirements.txt.
 pip install -r requirements.txt
 ```
 
-**5. Generate Sample Data (Optional):**
+**5. Generate Sample Data:**
 A script is provided to generate a dummy_transactions.csv file with 1 million records for testing.
 
 ```Bash
@@ -85,7 +85,7 @@ Uploads a CSV file for processing. The processing is handled in the background, 
 **Example using curl:**
 
 ```Bash
-curl -X POST -F "file=@/path/to/your/dummy_transactions.csv" [http://127.0.0.1:8000/upload](http://127.0.0.1:8000/upload)
+curl -X POST -F "file=@/path/to/your/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
 ```
 **Success Response (200 OK):**
 
@@ -112,7 +112,7 @@ Returns summary statistics for a given user within a specified date range.
 **Example using `curl`:**
 
 ```Bash
-curl "[http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31](http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31)"
+curl "http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31"
 ```
 **Success Response (200 OK):**
 
