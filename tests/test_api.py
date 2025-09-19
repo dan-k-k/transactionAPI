@@ -190,3 +190,4 @@ def test_upload_csv_corrupt_data(client):
 
     assert response.status_code == 400
     assert "corrupt or malformed data" in response.json()["detail"]
+

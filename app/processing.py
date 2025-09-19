@@ -98,3 +98,4 @@ def create_database_indexes(engine: Engine):
     except Exception as e:
         # Index might already exist or table might not exist yet
         pass
+
