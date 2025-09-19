@@ -88,7 +88,7 @@ Uploads a CSV file for processing. The processing is handled in the background, 
 curl -X POST -F "file=@/path/to/your/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
 
 # For example:
-curl -X POST -F "file=@/Users/danking/VS Code Projects/suadeChallengeTemp/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
+curl -X POST -F "file=@/Users/danking/VS Code Projects/temp/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
 ```
 **Success Response (200 OK):**
 
@@ -156,6 +156,6 @@ The tests run against a clean, in-memory SQLite database to ensure isolation and
 
 - Concurrency (BackgroundTasks): Data processing and database insertion can be time-consuming. I used FastAPI's BackgroundTasks to offload this work. This allows the API to immediately respond to the client's upload request, creating a non-blocking, responsive user experience.
 
-- Database and ORM (SQLite & SQLAlchemy): For the scope of this challenge, SQLite is a simple and effective file-based database that requires no separate server setup. I used SQLAlchemy as the ORM for its powerful engine and connection management, which allows for robust, backend-agnostic database interactions. An index was added to the (user_id, timestamp) columns to ensure that summary queries remain fast even with millions of rows.
+- Database and ORM (SQLite & SQLAlchemy): SQLite is a simple and effective file-based database that requires no separate server setup. I used SQLAlchemy as the ORM for its powerful engine and connection management, which allows for robust, backend-agnostic database interactions. An index was added to the (user_id, timestamp) columns to ensure that summary queries remain fast even with millions of rows.
 
 - Testing Strategy: The tests are designed to be independent and fast. Using an in-memory SQLite database for the test suite ensures that tests don't interfere with each other or require a persistent database file. The dependency injection system in FastAPI was used to seamlessly swap the production database engine with the test engine.

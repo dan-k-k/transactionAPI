@@ -9,7 +9,7 @@ from .models import SummaryStats
 from . import processing
 
 app = FastAPI(
-    title="Suade Coding Challenge API",
+    title="Transaction API",
     description="API for uploading and summarising transaction data."
 )
 
