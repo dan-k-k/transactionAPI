@@ -32,12 +32,14 @@ cd transactionAPI
 
 ```Bash
 docker compose up
-# wait for message and open http://localhost:8000/docs
+# wait for automatic tests to pass and open http://localhost:8000/docs
 ```
 **3. Generate Test Data:**
 
 ```Bash
 docker compose exec web python generate_data.py --rows 5000
+# in a new terminal if needed; `cd transactionAPI` again.
+# now look for the generated 'dummy_transactions.csv' in root directory.
 ```
 
 ### Running the Application
