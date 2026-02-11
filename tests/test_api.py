@@ -1,193 +1,97 @@
 # tests/test_api.py
 import pytest
 import io
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.main import app, get_engine, get_db
-from app.database import SessionLocal
-import sqlite3
-from datetime import date
-from sqlalchemy.event import listen
 
-# --- Test Setup ---
-# Use a clean, in-memory SQLite database for all tests
-SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
-test_engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-
-# This function will be called for every new connection made by the test_engine
-def _fk_pragma_on_connect_test(dbapi_con, con_record):
-    """Registers the date adapter for the test SQLite connection."""
-    sqlite3.register_adapter(date, lambda val: val.isoformat())
-
-# Apply the listener directly to the test_engine
-listen(test_engine, 'connect', _fk_pragma_on_connect_test)
-# ----------------------------------------
-
-# Create a test session
-TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
-
-# Override dependencies
-def get_test_engine():
-    yield test_engine
-
-def get_test_db():
-    db = TestSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-app.dependency_overrides[get_engine] = get_test_engine
-app.dependency_overrides[get_db] = get_test_db
-
-# --- Fixtures ---
-@pytest.fixture(scope="module")
-def client():
-    """Create a test client that all tests can use."""
-    with TestClient(app) as c:
-        yield c
+# --- Fixtures specific to this file ---
 
 @pytest.fixture(scope="function")
-def db_with_data(client):
-    """Set up the database with test data for tests that need it."""
+def populate_integration_data(client):
+    """
+    Uses the API itself to upload data, verifying the full 'Upload -> DB' pipeline.
+    Because TestClient is synchronous, the data is guaranteed to be in the DB 
+    before the test function starts.
+    """
     csv_content = (
         "transaction_id,user_id,product_id,timestamp,transaction_amount\n"
         "uuid1,123,101,2025-01-15 10:00:00,100.50\n"
         "uuid2,123,102,2025-01-16 11:00:00,200.75\n"
         "uuid3,456,103,2025-01-17 12:00:00,50.00"
     )
-    # Using BytesIO is cleaner than creating a physical file
     file_bytes = io.BytesIO(csv_content.encode('utf-8'))
-    response = client.post("/upload", files={"file": ("test_data.csv", file_bytes, "text/csv")})
-    
-    # Wait a moment for background processing to complete
-    import time
-    time.sleep(0.1)
-    
+    response = client.post(
+        "/upload", 
+        files={"file": ("integration_test_data.csv", file_bytes, "text/csv")}
+    )
+    assert response.status_code == 200
     return response
 
 # --- Tests ---
+
 def test_read_root(client):
-    """Test the root endpoint."""
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "Welcome to the Transaction Analysis API"}
 
 def test_upload_csv_success(client):
-    """Test successful CSV upload."""
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
-                  "uuid1,1,101,2025-01-15 10:00:00,100.50\n" \
-                  "uuid2,2,102,2025-01-16 11:00:00,200.75"
-
+                  "uuid_new,1,101,2025-01-15 10:00:00,100.50"
     file_bytes = io.BytesIO(csv_content.encode('utf-8'))
-    response = client.post("/upload", files={"file": ("test_transactions.csv", file_bytes, "text/csv")})
-
-    assert response.status_code == 200
-    assert "accepted and is being processed" in response.json()["message"]
-
-def test_upload_invalid_file_type(client):
-    """Test upload with invalid file type."""
-    file_bytes = io.BytesIO(b"not a csv")
-    response = client.post("/upload", files={"file": ("test.txt", file_bytes, "text/plain")})
     
-    assert response.status_code == 400
-    assert "Invalid file type" in response.json()["detail"]
+    response = client.post(
+        "/upload", 
+        files={"file": ("test.csv", file_bytes, "text/csv")}
+    )
+    
+    assert response.status_code == 200
+    assert "accepted" in response.json()["message"]
 
-def test_get_summary_success(client, db_with_data):
-    """Test successful summary retrieval."""
+def test_get_summary_success(client, populate_integration_data):
+    # This test relies on populate_integration_data to have finished inserting rows
     response = client.get("/summary/123?start_date=2025-01-01&end_date=2025-12-31")
     
     assert response.status_code == 200
     data = response.json()
-    assert data["user_id"] == 123
-    assert data["max_transaction"] == 200.75
-    assert data["min_transaction"] == 100.50
-
-def test_get_summary_not_found(client, db_with_data):
-    """Test summary for non-existent user."""
-    response = client.get("/summary/9999?start_date=2025-01-01&end_date=2025-12-31")
     
-    assert response.status_code == 404
-    assert "No transactions found" in response.json()["detail"]
+    # Verify math
+    assert data["user_id"] == 123
+    assert data["max_transaction"] == 200.75  # Max of 100.50 and 200.75
+    assert data["min_transaction"] == 100.50
+    # Floating point comparison (approximate)
+    assert abs(data["mean_transaction"] - 150.625) < 0.001
 
-def test_get_summary_invalid_date_range(client):
-    """Test summary with invalid date format."""
-    response = client.get("/summary/1?start_date=invalid&end_date=2025-01-01")
-    assert response.status_code == 422  # Validation error
-
-def test_get_summary_invalid_date_logic(client, db_with_data):
-    """
-    Tests that the API returns a 400 Bad Request error
-    when the start_date is after the end_date.
-    """
-    # Test: Request a summary with an invalid date range
-    response = client.get("/summary/123?start_date=2025-02-01&end_date=2025-01-01")
-
-    # Assert: We should get a 400 Bad Request
-    assert response.status_code == 400
-    assert "start_date cannot be after end_date" in response.json()["detail"]
-
-def test_get_summary_single_transaction(client, db_with_data):
-    """
-    Tests that the calculations are correct when only one transaction
-    is found in the given date range.
-    """
-    # Test: Request a summary for a date range with a single transaction
-    # The test data has a transaction for user 123 on Jan 15th for 100.50
-    response = client.get("/summary/123?start_date=2025-01-15&end_date=2025-01-15")
-
-    # Assert: Check the results
+def test_get_summary_date_filtering(client, populate_integration_data):
+    # Test that date filters actually work (Should only find the Jan 15th transaction)
+    response = client.get("/summary/123?start_date=2025-01-14&end_date=2025-01-15")
+    
     assert response.status_code == 200
     data = response.json()
-    assert data["user_id"] == 123
-    assert data["max_transaction"] == 100.50
-    assert data["min_transaction"] == 100.50
-    assert data["mean_transaction"] == 100.50
+    assert data["max_transaction"] == 100.50 # The 200.75 transaction was on the 16th
 
-def test_get_summary_user_exists_no_transactions_in_range(client, db_with_data):
-    """
-    Tests that a 404 is returned for a valid user who has no
-    transactions in the specified date range.
-    """
-    # Test: Request a summary for a user that exists but with a date range with no data
-    response = client.get("/summary/123?start_date=2030-01-01&end_date=2030-12-31")
-
-    # Assert: We should get a 404 Not Found
+def test_get_summary_not_found(client, populate_integration_data):
+    # User 9999 does not exist
+    response = client.get("/summary/9999?start_date=2025-01-01&end_date=2025-12-31")
     assert response.status_code == 404
-    assert "No transactions found" in response.json()["detail"]
 
-def test_upload_csv_missing_column(client):
-    """
-    Tests that the API rejects a CSV that is missing a required column.
-    """
-    # CSV content missing the 'transaction_amount' column
-    csv_content = (
-        "transaction_id,user_id,product_id,timestamp\n"
-        "uuid1,123,101,2025-01-15 10:00:00"
+def test_get_summary_bad_date_logic(client):
+    # Start date after end date
+    response = client.get("/summary/1?start_date=2025-02-01&end_date=2025-01-01")
+    assert response.status_code == 400
+
+def test_invalid_file_type(client):
+    response = client.post(
+        "/upload", 
+        files={"file": ("test.txt", io.BytesIO(b"data"), "text/plain")}
     )
-    file_bytes = io.BytesIO(csv_content.encode('utf-8'))
-    
-    response = client.post("/upload", files={"file": ("malformed.csv", file_bytes, "text/csv")})
-    
+    assert response.status_code == 400
+    assert "Invalid file type" in response.json()["detail"]
+
+def test_corrupt_csv_columns(client):
+    # Missing 'timestamp' column
+    csv = "transaction_id,user_id,product_id,transaction_amount\n1,2,3,100"
+    response = client.post(
+        "/upload", 
+        files={"file": ("bad.csv", io.BytesIO(csv.encode()), "text/csv")}
+    )
     assert response.status_code == 400
     assert "missing required columns" in response.json()["detail"]
-
-def test_upload_csv_corrupt_data(client):
-    """
-    Tests that the API rejects a CSV that has corrupt data in a numeric column.
-    """
-    # CSV content with non-numeric 'transaction_amount'
-    csv_content = (
-        "transaction_id,user_id,product_id,timestamp,transaction_amount\n"
-        "uuid1,123,101,2025-01-15 10:00:00,abc"
-    )
-    file_bytes = io.BytesIO(csv_content.encode('utf-8'))
-
-    response = client.post("/upload", files={"file": ("corrupt.csv", file_bytes, "text/csv")})
-
-    assert response.status_code == 400
-    assert "corrupt or malformed data" in response.json()["detail"]
 

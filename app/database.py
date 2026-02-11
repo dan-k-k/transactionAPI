@@ -1,31 +1,21 @@
 # app/database.py
-import sqlite3
-from datetime import date
+import os
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.event import listen
+from sqlalchemy.orm import sessionmaker, declarative_base
 
-# This is the connection string for a local SQLite database file named 'transactions.db'
-DATABASE_URL = "sqlite:///./transactions.db"
+# 1. Force a default Postgres URL (for local dev) if env var is missing
+#    Format: postgresql://user:password@host:port/db_name
+DEFAULT_DB_URL = "postgresql://user:password@localhost:5432/transactions_db"
+DATABASE_URL = os.getenv("DATABASE_URL", DEFAULT_DB_URL)
 
-# The engine is the main entry point to the database.
-# 'connect_args' is only needed for SQLite to allow it to be used by multiple threads,
-# which is what FastAPI does.
-engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
-)
+# 2. Ensure URL starts with postgresql:// (Fix for some cloud providers/older URLs)
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
-# Create a SessionLocal class for database sessions
+# 3. Create Engine - clean and simple
+engine = create_engine(DATABASE_URL)
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-# This ensures that Python date objects are handled correctly by sqlite3
-# in Python 3.12+ to avoid the DeprecationWarning.
-def _fk_pragma_on_connect(dbapi_con, con_record):
-    """Ensures that the foreign key pragma is enabled for SQLite connections."""
-    dbapi_con.execute('PRAGMA foreign_keys=ON')
-    # Register the adapter for date objects
-    sqlite3.register_adapter(date, lambda val: val.isoformat())
-
-# Use the listen function from SQLAlchemy to apply this to every new connection
-listen(engine, 'connect', _fk_pragma_on_connect)
+Base = declarative_base()
 

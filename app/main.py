@@ -1,12 +1,13 @@
 # app/main.py
+# find . -maxdepth 2 -not -path '*/.*'
 from datetime import date
 
 from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks
 from sqlalchemy import text, Engine
 from sqlalchemy.orm import Session
-from .database import engine as main_engine, SessionLocal
-from .models import SummaryStats
-from . import processing
+from .database import engine as main_engine, SessionLocal, Base 
+from .schemas import SummaryStats 
+from . import processing, models 
 
 app = FastAPI(
     title="Transaction API",
@@ -54,7 +55,6 @@ async def upload_csv(
         
         # 4. Add the heavy processing function to run in the background
         background_tasks.add_task(processing.process_csv_to_db, contents, engine)
-        background_tasks.add_task(processing.create_database_indexes, engine)
 
         return {
             "message": f"File '{file.filename}' accepted and is being processed in the background."
@@ -119,3 +119,7 @@ def get_summary(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query failed: {e}")
     
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
+

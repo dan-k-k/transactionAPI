@@ -1,0 +1,92 @@
+# .github/workflows/main.yml
+name: CI/CD Pipeline
+
+on:
+  push:
+  pull_request:
+
+# Define environment variables for the workflow
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # JOB 1: CI (Run Tests)
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user" 
+          --health-interval 10s 
+          --health-timeout 5s 
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest httpx pytest-asyncio
+
+      - name: Run Tests
+        env:
+          # This URL connects to the service container defined above
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
+        run: |
+          pytest tests/ -v
+
+  # JOB 2: CD (Build & Push Docker Image)
+  # This runs ONLY if the 'test' job passes
+  build-and-push:
+    needs: test
+    runs-on: ubuntu-latest
+    # Only run CD on the main branch (ignore PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
