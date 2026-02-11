@@ -17,7 +17,7 @@ This project is a RESTful API service built with Python and FastAPI. It provides
 
 ## Tech Stack
 
-* **Language**: Python 3.10+
+* **Language**: Python 3.11+
 * **API Framework**: FastAPI
 * **Data Processing**: pandas
 * **Database**: SQLite with SQLAlchemy
@@ -30,7 +30,7 @@ This project is a RESTful API service built with Python and FastAPI. It provides
 Follow these steps to set up the project environment locally.
 
 **1. Prerequisites:**
-* Python 3.10 or newer
+* Python 3.11 or newer
 * `pip` and `venv`
 
 **2. Clone the Repository:**
@@ -159,3 +159,7 @@ The tests run against a clean, in-memory SQLite database to ensure isolation and
 - Database and ORM (SQLite & SQLAlchemy): SQLite is a simple and effective file-based database that requires no separate server setup. I used SQLAlchemy as the ORM for its powerful engine and connection management, which allows for robust, backend-agnostic database interactions. An index was added to the (user_id, timestamp) columns to ensure that summary queries remain fast even with millions of rows.
 
 - Testing Strategy: The tests are designed to be independent and fast. Using an in-memory SQLite database for the test suite ensures that tests don't interfere with each other or require a persistent database file. The dependency injection system in FastAPI was used to seamlessly swap the production database engine with the test engine.
+
+docker compose exec web python generate_data.py --rows 5000
+http://localhost:8000/docs#/
+

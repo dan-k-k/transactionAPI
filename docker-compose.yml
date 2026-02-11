@@ -21,7 +21,9 @@ services:
       retries: 5
 
   web:
-    build: .
+    # build: . # build locally but you must comment out the `image` line below
+    image: ghcr.io/dan-k-k/transactionapi:latest # Pull from GitHub.
+    # ---
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - .:/app  # Syncs code changes instantly (Hot Reload)

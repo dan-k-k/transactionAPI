@@ -23,7 +23,7 @@ config = context.config
 
 # 4. Overwrite the sqlalchemy.url in the config with our Pydantic settings
 # This ensures Alembic uses the exact same DB URL as the app
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+config.set_main_option("sqlalchemy.url", settings.get_database_url())
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
