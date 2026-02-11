@@ -14,6 +14,9 @@ app = FastAPI(
     description="API for uploading and summarising transaction data."
 )
 
+@app.on_event("startup")
+async def startup_event(): print("Open Swagger UI here: http://localhost:8000/docs")
+
 # Dependency function for engine
 def get_engine():
     yield main_engine
@@ -26,6 +29,16 @@ def get_db():
     finally:
         db.close()
 
+def process_csv_wrapper(contents: bytes, engine: Engine):
+    print(f"Uploading csv...")
+    try:
+        rows = processing.process_csv_to_db(contents, engine)
+        print(f"COMPLETE: {rows} transactions added to DB.")
+        print("You may now query the /summary endpoint.\n")
+        print("user_id is an integer. Dates are in format YYYY-MM-DD.\n")
+    except Exception as e:
+        print(f"Error during processing: {e}.")
+
 # This is the route for the root URL "/"
 @app.get("/")
 def read_root():
@@ -37,33 +50,20 @@ async def upload_csv(
     file: UploadFile = File(...), 
     engine: Engine = Depends(get_engine)
 ):
-    """
-    Uploads a CSV file and processes it in the background.
-    - **file**: The CSV file containing transaction data.
-    """
-    # 1. Validate the file type
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV.")
 
     try:
-        # 2. Read the file contents into memory
         contents = await file.read()
         
-        # 3. Validate CSV format before processing
-        processing.validate_csv_format(contents)
-        
-        # 4. Add the heavy processing function to run in the background
-        background_tasks.add_task(processing.process_csv_to_db, contents, engine)
+        processing.validate_csv_format(contents) # fast validation
+        background_tasks.add_task(process_csv_wrapper, contents, engine) # add slow full task to backgroundtasks
 
-        return {
-            "message": f"File '{file.filename}' accepted and is being processed in the background."
-        }
+        return {"message": f"File '{file.filename}' accepted. Please check terminal logs for 'COMPLETE' before querying."}
 
     except ValueError as e:
-        # Handle CSV validation errors
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        # If anything goes wrong, return a server error
         raise HTTPException(status_code=500, detail=f"An error occurred during file processing: {e}")
     
 @app.get("/summary/{user_id}", response_model=SummaryStats)
