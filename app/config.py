@@ -1,5 +1,6 @@
 # app/config.py
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     POSTGRES_USER: str = "user"
@@ -8,7 +9,7 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost" # Added host so we can switch between 'db' and 'localhost'
     POSTGRES_PORT: str = "5432"
 
-    DATABASE_URL: str = None # init
+    DATABASE_URL: Optional[str] = None
 
     class Config:
         env_file = ".env"
