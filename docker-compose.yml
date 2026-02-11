@@ -49,6 +49,8 @@ services:
 
   tests:
     build: .
+    volumes:
+      - .:/app
     environment:
       # Connects to 'test-db' service, NOT 'db' service
       TEST_DATABASE_URL: postgresql://user:password@test-db:5432/test_transactions_db

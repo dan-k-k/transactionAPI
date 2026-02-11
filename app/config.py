@@ -1,5 +1,5 @@
 # app/config.py
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict 
 from typing import Optional
 
 class Settings(BaseSettings):
@@ -11,8 +11,7 @@ class Settings(BaseSettings):
 
     DATABASE_URL: Optional[str] = None
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(env_file=".env")
 
     def get_database_url(self):
         if self.DATABASE_URL:
