@@ -1,7 +1,7 @@
 # tests/test_api.py
 import pytest
 import io
-import uuid # Imported to generate real IDs if needed, but we'll hardcode them for clarity
+import uuid 
 
 # --- Fixtures specific to this file ---
 
@@ -33,7 +33,6 @@ def test_read_root(client):
     assert response.json() == {"message": "Welcome to the Transaction Analysis API"}
 
 def test_upload_csv_success(client):
-    # We use a valid UUID here as well
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
                   "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,1,101,2025-01-15 10:00:00,100.50"
     file_bytes = io.BytesIO(csv_content.encode('utf-8'))
@@ -52,13 +51,12 @@ def test_upload_csv_success(client):
 
 def test_get_summary_success(client, populate_integration_data):
     # This test relies on populate_integration_data to have finished inserting rows
-    # Note: We query for user 123, who has two transactions in the fixture
     response = client.get("/summary/123?start_date=2025-01-01&end_date=2025-12-31")
     
     assert response.status_code == 200
     data = response.json()
     
-    # Verify math
+    # Verify maths
     assert data["user_id"] == 123
     assert data["max_transaction"] == 200.75  # Max of 100.50 and 200.75
     assert data["min_transaction"] == 100.50
@@ -72,7 +70,7 @@ def test_get_summary_date_filtering(client, populate_integration_data):
     assert response.status_code == 200
     data = response.json()
     # The fixture has 100.50 on Jan 15, and 200.75 on Jan 16.
-    # Our filter ends on Jan 15, so max should be 100.50.
+    # Filter ends on Jan 15, so max should be 100.50.
     assert data["max_transaction"] == 100.50 
 
 def test_get_summary_not_found(client, populate_integration_data):
@@ -95,8 +93,7 @@ def test_invalid_file_type(client):
 
 def test_corrupt_csv_columns(client):
     # Missing 'timestamp' column
-    # Even corrupt CSVs need a valid UUID in the first column to pass the initial regex if you have one,
-    # but here it fails on column validation first, which is fine.
+    # Even corrupt CSVs need a valid UUID in the first column to pass the initial regex
     csv = "transaction_id,user_id,product_id,transaction_amount\n1,2,3,100"
     response = client.post(
         "/upload", 

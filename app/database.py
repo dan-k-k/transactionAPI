@@ -3,11 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.config import settings
 
-# 1. CHANGE THIS LINE: Call the method with ()
-#    This ensures we always get a String, never None.
+# 1. Ensures we always get a String
 DATABASE_URL = settings.get_database_url()
 
-# 2. Now this is safe because DATABASE_URL is guaranteed to be a string
+# 2. DATABASE_URL is guaranteed to be a string
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 

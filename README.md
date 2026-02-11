@@ -1,165 +1,70 @@
 # Transaction Analysis API
 
-This project is a RESTful API service built with Python and FastAPI. It provides endpoints to upload a large CSV file of e-commerce transactions and retrieve summarised statistics for specific users within a given date range.
+This project is a RESTful API service built with Python, FastAPI, and PostgreSQL. It is fully containerised using Docker to ensure easy distribution and consistent execution.
+
+The API provides endpoints to upload large CSV files of e-commerce transactions and retrieve summarised statistics (max, min, mean) for specific users within a given date range.
 
 ---
 
 ## Features
 
-* **/upload**: Accepts a large CSV file, processes it efficiently, and stores the data in a database.
-* **/summary/{user_id}**: Returns key statistics (max, min, mean) for a user's transactions.
-* **Efficient Processing**: Handles large datasets (1M+ rows) with low memory usage by processing the file in chunks.
-* **Asynchronous Operations**: The file upload endpoint uses background tasks to avoid blocking and provide an immediate response.
-* **Robust & Tested**: Includes a full suite of unit tests using `pytest` to ensure reliability.
-* **Database-backed**: Uses SQLAlchemy with a SQLite database for data persistence and fast querying.
+* **Fully Containerised**: via Docker Compose. 
+* **Efficient Processing**: chunks CSV uploads. 
+* **Asynchronous Operations**: background tasks to process uploads without blocking the API response.
+* **Robust Statistics**: summaries from the db.
+* **Tested**
 
 ---
 
-## Tech Stack
-
-* **Language**: Python 3.11+
-* **API Framework**: FastAPI
-* **Data Processing**: pandas
-* **Database**: SQLite with SQLAlchemy
-* **Testing**: Pytest
+## Stack
+**Python 3.11, FastAPI, pandas, PostgreSQL 15, Docker & Docker Compose, Pytest**
 
 ---
 
 ## Setup and Installation
 
-Follow these steps to set up the project environment locally.
-
-**1. Prerequisites:**
-* Python 3.11 or newer
-* `pip` and `venv`
-
-**2. Clone the Repository:**
+**1. Clone the Repository:**
 ```sh
 git clone https://github.com/dan-k-k/transactionAPI
 cd transactionAPI
 ```
-**3. Create and Activate a Virtual Environment:**
+**2. Start the Application:**
 
 ```Bash
-# For macOS/Linux
-python3 -m venv venv
-source venv/bin/activate
-
-# For Windows
-python -m venv venv
-.\venv\Scripts\activate
+docker compose up
+# wait for message and open http://localhost:8000/docs
 ```
-**4. Install Dependencies:**
-All required packages are listed in requirements.txt.
+**3. Generate Test Data:**
 
 ```Bash
-pip install -r requirements.txt
-```
-
-**5. Generate Sample Data:**
-A script is provided to generate a dummy_transactions.csv file with 1 million records for testing.
-
-```Bash
-python generate_data.py
+docker compose exec web python generate_data.py --rows 5000
 ```
 
 ### Running the Application
 
-To run the FastAPI server, use uvicorn:
+Navigate to http://localhost:8000/docs
 
-```Bash
-uvicorn app.main:app --reload
-```
-The API will be available at http://127.0.0.1:8000. You can access the interactive Swagger UI documentation at http://127.0.0.1:8000/docs.
-
-### API Usage and Endpoints
-
-**1. Upload Transaction Data**
-
-Uploads a CSV file for processing. The processing is handled in the background, so you will receive an immediate response.
-
-- **Endpoint:** `POST /upload`
-
-- **Request Body:** `multipart/form-data` with a `file` key.
-
-**Example using `curl` (new terminal):**
-
-```Bash
-curl -X POST -F "file=@/path/to/your/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
-
-# For example:
-curl -X POST -F "file=@/Users/danking/VS Code Projects/temp/transactionAPI/dummy_transactions.csv" http://127.0.0.1:8000/upload
-```
-**Success Response (200 OK):**
-
-```JSON
-{
-  "message": "File 'dummy_transactions.csv' accepted and is being processed in the background."
-}
-```
+**1. Upload Data**
+  1. Click on the POST /upload endpoint.
+  2. Click "Try it out".
+  3. Select the dummy_transactions.csv file you just generated.
+  4. Click Execute.
+  5. Watch out for the 'complete' message in your terminal.
 
 **2. Get User Summary**
+  1. Click on the GET /summary/{user_id} endpoint.
+  2. Click "Try it out".
+  3. Enter a user_id eg. '1' and a date range in the format YYYY-MM-DD
+  4. Click Execute.
 
-Returns summary statistics for a given user within a specified date range.
+### Developing Locally
 
-- **Endpoint:** `GET /summary/{user_id}`
+1. Create a file named `docker-compose.override.yml` in the root directory:
 
-- **Path Parameter:** user_id (integer)
-
-- **Query Parameters:**
-
-  - `start_date` (string, `YYYY-MM-DD`)
-
-  - `end_date` (string, `YYYY-MM-DD`)
-
-**Example using `curl`:**
-
-```Bash
-# user_id=123, start_date=2025-01-01, end_date=2025-12-31
-curl "http://127.0.0.1:8000/summary/123?start_date=2025-01-01&end_date=2025-12-31"
-```
-**Example Success Response (200 OK):**
-
-```JSON
-{
-  "user_id": 123,
-  "max_transaction": 495.5,
-  "min_transaction": 10.25,
-  "mean_transaction": 251.73
-}
+```YAML
+services:
+  web:
+    build: .
 ```
 
-**Error Response (404 Not Found):**
-
-If no transactions are found for the user in the given range.
-
-```JSON
-{
-  "detail": "No transactions found for user in the given date range."
-}
-```
-
-### Running the Tests
-
-The project includes a comprehensive test suite. To run the tests, execute the following command from the root directory:
-
-```Bash
-pytest -v
-```
-The tests run against a clean, in-memory SQLite database to ensure isolation and speed.
-
-### Design Choices and Key Decisions
-
-- Framework Choice (FastAPI): I chose FastAPI for its high performance, native async support, and automatic generation of interactive API documentation (Swagger UI), which is excellent for development and testing.
-
-- Handling Large Files: To meet the requirement of handling large datasets efficiently, I implemented a chunking strategy. The /upload endpoint reads the CSV file in smaller chunks using pandas, ensuring that the server's memory usage remains low and constant, regardless of the file size.
-
-- Concurrency (BackgroundTasks): Data processing and database insertion can be time-consuming. I used FastAPI's BackgroundTasks to offload this work. This allows the API to immediately respond to the client's upload request, creating a non-blocking, responsive user experience.
-
-- Database and ORM (SQLite & SQLAlchemy): SQLite is a simple and effective file-based database that requires no separate server setup. I used SQLAlchemy as the ORM for its powerful engine and connection management, which allows for robust, backend-agnostic database interactions. An index was added to the (user_id, timestamp) columns to ensure that summary queries remain fast even with millions of rows.
-
-- Testing Strategy: The tests are designed to be independent and fast. Using an in-memory SQLite database for the test suite ensures that tests don't interfere with each other or require a persistent database file. The dependency injection system in FastAPI was used to seamlessly swap the production database engine with the test engine.
-
-docker compose exec web python generate_data.py --rows 5000
-http://localhost:8000/docs#/
-
+2. Run docker compose up --build. The app will now reflect your local changes.

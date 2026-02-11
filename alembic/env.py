@@ -31,9 +31,6 @@ if config.config_file_name is not None:
 # 5. Set target_metadata to model's metadata
 target_metadata = Base.metadata
 
-# ... leave the rest of the file (run_migrations_offline/online) as is ...
-
-
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 

@@ -5,7 +5,7 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
-# Import your app and global variables
+# Import app and global variables
 from app.main import app, get_engine, get_db
 from app.database import Base
 
@@ -16,7 +16,7 @@ TEST_DATABASE_URL = os.getenv(
     "postgresql://user:password@localhost:5432/test_transactions_db" 
 )
 
-# Fix for some environments providing 'postgres://'
+# For environments providing 'postgres://'
 if TEST_DATABASE_URL.startswith("postgres://"):
     TEST_DATABASE_URL = TEST_DATABASE_URL.replace("postgres://", "postgresql://")
 
