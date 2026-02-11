@@ -1,31 +1,62 @@
 # docker-compose.yml
+version: '3.8'
+
 services:
-  # 1. The Database Service
-  test-db:   # <--- Service Name
+  # 1. LIVE APP SERVICES (For running the API)
+  db:
     image: postgres:15
+    restart: always
     environment:
-      POSTGRES_USER: user              # Must match conftest/connection string
+      POSTGRES_USER: user
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: test_transactions_db # Must match conftest/connection string
+      POSTGRES_DB: transactions_db
     ports:
-      - "5433:5432" # Allows you to connect from Mac via localhost:5433
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      # FIX: Updated to use the actual user/db defined above
-      test: ["CMD-SHELL", "pg_isready -U user -d test_transactions_db"]
+      test: ["CMD-SHELL", "pg_isready -U user -d transactions_db"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  # 2. The Test Runner
-  app_test:
+  web:
+    build: .
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - .:/app  # Syncs code changes instantly (Hot Reload)
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/transactions_db
+    depends_on:
+      db:
+        condition: service_healthy
+
+  # 2. TEST SERVICES (For CI/Automated Checks)
+  test-db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: test_transactions_db
+    # We don't map ports here to avoid conflict with the main db on 5432
+    # This DB is internal to Docker network only
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d test_transactions_db"]
+      interval: 5s
+      retries: 5
+
+  tests:
     build: .
     environment:
-      # FIX 1: Hostname must match the service name 'test-db'
-      # FIX 2: Port must be 5432 (Internal Docker Network port, not the external 5433)
-      # FIX 3: Creds must match what you set in test-db environment
+      # Connects to 'test-db' service, NOT 'db' service
       TEST_DATABASE_URL: postgresql://user:password@test-db:5432/test_transactions_db
     depends_on:
-      test-db: # FIX: Must match service name defined on line 3
+      test-db:
         condition: service_healthy
     command: pytest tests/ -v
+
+volumes:
+  postgres_data:
 
