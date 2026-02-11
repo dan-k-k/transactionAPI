@@ -18,3 +18,4 @@ dummy_transactions.csv
 htmlcov/
 
 docker-compose.override.yml
+

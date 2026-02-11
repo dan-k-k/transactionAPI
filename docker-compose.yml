@@ -40,7 +40,7 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: password
       POSTGRES_DB: test_transactions_db
-    # We don't map ports here to avoid conflict with the main db on 5432
+    # don't map ports here to avoid conflict with the main db on 5432
     # This DB is internal to Docker network only
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d test_transactions_db"]

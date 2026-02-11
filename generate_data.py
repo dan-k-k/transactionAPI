@@ -20,8 +20,7 @@ with Path("dummy_transactions.csv").open(mode="w", newline="") as file:
                 "transaction_id": fake.uuid4(),
                 "user_id": fake.random_int(min=1, max=1000),
                 "product_id": fake.random_int(min=1, max=500),
-                "timestamp": fake.date_time_between(start_date="-1y",
-end_date="now"),
+                "timestamp": fake.date_time_between(start_date="-1y",end_date="now"),
                 "transaction_amount": round(random.uniform(5.0, 500.0), 2),
             }
 )

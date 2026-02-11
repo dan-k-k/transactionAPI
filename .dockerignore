@@ -1,0 +1,9 @@
+# .dockerignore
+
+venv/
+__pycache__/
+.git/
+.pytest_cache/
+*.pyc
+transactions.db
+

@@ -10,7 +10,7 @@ from app.main import app, get_engine, get_db
 from app.database import Base
 
 # 1. Determine DB URL
-# Use a specific test database name to avoid wiping your dev data
+# Use a specific test database name to avoid wiping dev data
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL", 
     "postgresql://user:password@localhost:5432/test_transactions_db" 
@@ -28,13 +28,6 @@ TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_eng
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_test_db():
-    """
-    Optional: Create the test database if it doesn't exist.
-    (Requires running as a user with CREATEDB privileges, usually default in Docker)
-    """
-    # This part is tricky because we can't connect to a DB that doesn't exist yet.
-    # Usually, we assume the CI/Docker setup created 'test_transactions_db'.
-    # We will just ensure clean tables here.
     pass
 
 @pytest.fixture(scope="function")

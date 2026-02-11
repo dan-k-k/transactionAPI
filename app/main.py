@@ -48,7 +48,6 @@ async def upload_csv(
     try:
         # 2. Read the file contents into memory
         contents = await file.read()
-        # A more robust, production-grade alternative would be to implement a true streaming solution
         
         # 3. Validate CSV format before processing
         processing.validate_csv_format(contents)

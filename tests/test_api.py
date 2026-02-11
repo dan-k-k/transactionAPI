@@ -1,6 +1,7 @@
 # tests/test_api.py
 import pytest
 import io
+import uuid # Imported to generate real IDs if needed, but we'll hardcode them for clarity
 
 # --- Fixtures specific to this file ---
 
@@ -8,14 +9,13 @@ import io
 def populate_integration_data(client):
     """
     Uses the API itself to upload data, verifying the full 'Upload -> DB' pipeline.
-    Because TestClient is synchronous, the data is guaranteed to be in the DB 
-    before the test function starts.
+    We use VALID UUIDs here to satisfy the Postgres UUID type constraint.
     """
     csv_content = (
         "transaction_id,user_id,product_id,timestamp,transaction_amount\n"
-        "uuid1,123,101,2025-01-15 10:00:00,100.50\n"
-        "uuid2,123,102,2025-01-16 11:00:00,200.75\n"
-        "uuid3,456,103,2025-01-17 12:00:00,50.00"
+        "550e8400-e29b-41d4-a716-446655440000,123,101,2025-01-15 10:00:00,100.50\n"
+        "550e8400-e29b-41d4-a716-446655440001,123,102,2025-01-16 11:00:00,200.75\n"
+        "550e8400-e29b-41d4-a716-446655440002,456,103,2025-01-17 12:00:00,50.00"
     )
     file_bytes = io.BytesIO(csv_content.encode('utf-8'))
     response = client.post(
@@ -33,8 +33,9 @@ def test_read_root(client):
     assert response.json() == {"message": "Welcome to the Transaction Analysis API"}
 
 def test_upload_csv_success(client):
+    # We use a valid UUID here as well
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
-                  "uuid_new,1,101,2025-01-15 10:00:00,100.50"
+                  "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,1,101,2025-01-15 10:00:00,100.50"
     file_bytes = io.BytesIO(csv_content.encode('utf-8'))
     
     response = client.post(
@@ -42,11 +43,16 @@ def test_upload_csv_success(client):
         files={"file": ("test.csv", file_bytes, "text/csv")}
     )
     
+    # Debugging tip: If this fails, print response.json() to see why
+    if response.status_code != 200:
+        print(f"Upload failed: {response.json()}")
+
     assert response.status_code == 200
     assert "accepted" in response.json()["message"]
 
 def test_get_summary_success(client, populate_integration_data):
     # This test relies on populate_integration_data to have finished inserting rows
+    # Note: We query for user 123, who has two transactions in the fixture
     response = client.get("/summary/123?start_date=2025-01-01&end_date=2025-12-31")
     
     assert response.status_code == 200
@@ -65,7 +71,9 @@ def test_get_summary_date_filtering(client, populate_integration_data):
     
     assert response.status_code == 200
     data = response.json()
-    assert data["max_transaction"] == 100.50 # The 200.75 transaction was on the 16th
+    # The fixture has 100.50 on Jan 15, and 200.75 on Jan 16.
+    # Our filter ends on Jan 15, so max should be 100.50.
+    assert data["max_transaction"] == 100.50 
 
 def test_get_summary_not_found(client, populate_integration_data):
     # User 9999 does not exist
@@ -87,6 +95,8 @@ def test_invalid_file_type(client):
 
 def test_corrupt_csv_columns(client):
     # Missing 'timestamp' column
+    # Even corrupt CSVs need a valid UUID in the first column to pass the initial regex if you have one,
+    # but here it fails on column validation first, which is fine.
     csv = "transaction_id,user_id,product_id,transaction_amount\n1,2,3,100"
     response = client.post(
         "/upload", 

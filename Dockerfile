@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE 1
 # Prevent Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED 1
 
-# Install system dependencies (needed for Postgres driver 'psycopg2')
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
     libpq-dev \
@@ -25,6 +25,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Command to run the application
-# We use host 0.0.0.0 so the container is accessible from outside
+# use host 0.0.0.0 so the container is accessible from outside
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
