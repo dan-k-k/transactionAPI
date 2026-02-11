@@ -1,14 +1,13 @@
 # app/database.py
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
-from app.config import settings  # Import the single source of truth
+from app.config import settings
 
-# 1. Get the URL directly from your Pydantic settings
-#    (This automatically handles Docker env vars vs Local defaults)
-DATABASE_URL = settings.DATABASE_URL
+# 1. CHANGE THIS LINE: Call the method with ()
+#    This ensures we always get a String, never None.
+DATABASE_URL = settings.get_database_url()
 
-# 2. Ensure URL starts with postgresql:// 
-#    (Fixes issue where some cloud providers like Heroku use 'postgres://')
+# 2. Now this is safe because DATABASE_URL is guaranteed to be a string
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://")
 
