@@ -1,4 +1,4 @@
-# Transaction Analysis API
+## Transaction Analysis API
 
 This project is a RESTful API service built with Python, FastAPI, and PostgreSQL. It is fully containerised using Docker to ensure easy distribution and consistent execution.
 
@@ -6,7 +6,7 @@ The API provides endpoints to upload large CSV files of e-commerce transactions 
 
 ---
 
-## Features
+### Features
 
 * **Fully Containerised**: via Docker Compose. 
 * **Efficient Processing**: chunks CSV uploads. 
@@ -16,12 +16,12 @@ The API provides endpoints to upload large CSV files of e-commerce transactions 
 
 ---
 
-## Stack
+### Stack
 **Python 3.11, FastAPI, pandas, PostgreSQL 15, Docker & Docker Compose, Pytest**
 
 ---
 
-## Setup and Installation
+### Setup and Installation
 
 **1. Clone the Repository:**
 ```sh
