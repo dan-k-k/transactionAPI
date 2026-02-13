@@ -1,6 +1,6 @@
 ## Transaction Analysis API
 
-This project is a RESTful API service built with Python, FastAPI, and PostgreSQL. It is fully containerised using Docker to ensure easy distribution and consistent execution.
+This project is a RESTful API service built with Python, FastAPI, and PostgreSQL. It is fully containerised using Docker and deployed to the cloud using AWS (EC2 & RDS) with a fully automated CI/CD pipeline via GitHub Actions.
 
 The API provides endpoints to upload large CSV files of e-commerce transactions and retrieve summarised statistics (max, min, mean) for specific users within a given date range.
 
@@ -8,25 +8,31 @@ The API provides endpoints to upload large CSV files of e-commerce transactions 
 
 ### Features
 
-* **Fully Containerised**: via Docker Compose. 
-* **Efficient Processing**: chunks CSV uploads. 
-* **Asynchronous Operations**: background tasks to process uploads without blocking the API response.
-* **Robust Statistics**: summaries from the db.
-* **Tested**
+* **Cloud Deployment**: Hosted on AWS EC2 with a managed AWS RDS PostgreSQL database.
+* **Continuous Deployment (CI/CD)**: Fully automated pipeline via GitHub Actions. Pushing to `main` triggers automated testing (pytest), Docker image builds, and zero-downtime deployment to the EC2 server via SSH.
+* **Fully Containerised**: Dockerised for local development and cloud execution.
+* **Chunking**: Chunks large CSV uploads and utilises background tasks to process data without blocking the API response.
 
 ---
 
-### Stack
-**Python 3.11, FastAPI, pandas, PostgreSQL 15, Docker & Docker Compose, Pytest**
+### Tech Stack
+* **Backend:** Python 3.11, FastAPI, pandas, Pytest
+* **Infrastructure:** Docker, AWS EC2 (Amazon Linux), AWS RDS (PostgreSQL 15)
+* **DevOps:** GitHub Actions (CI/CD), GitHub Container Registry (ghcr.io)
 
 ---
 
-### Setup and Installation
+*Note: The live AWS EC2 and RDS instances may currently be down to conserve AWS Free Tier limits.*
+*... Try `http://13.62.46.228/docs#/`*
+
+![API Server Demo](images/API_on_server.png)
+
+### Running Locally 
 
 **1. Clone the Repository:**
 ```sh
-git clone https://github.com/dan-k-k/transactionAPI
-cd transactionAPI
+git clone https://github.com/dan-k-k/transactionapi
+cd transactionapi
 ```
 **2. Start the Application:**
 
@@ -38,11 +44,11 @@ docker compose up
 
 ```Bash
 docker compose exec web python generate_data.py --rows 5000
-# in a new terminal if needed; `cd transactionAPI` again.
+# in a new terminal if needed; `cd transactionapi` again.
 # now look for the generated 'dummy_transactions.csv' in root directory.
 ```
 
-### Running the Application
+### Running the Application Locally
 
 Navigate to http://localhost:8000/docs
 
@@ -70,3 +76,4 @@ services:
 ```
 
 2. Run docker compose up --build. The app will now reflect your local changes.
+
