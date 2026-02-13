@@ -42,7 +42,7 @@ def process_csv_wrapper(contents: bytes, engine: Engine):
 # This is the route for the root URL "/"
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to the Transaction Analysis API"}
+    return {"message": "Hello from the automated cloud!"}
 
 @app.post("/upload")
 async def upload_csv(
