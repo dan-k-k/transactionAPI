@@ -30,7 +30,7 @@ def populate_integration_data(client):
 def test_read_root(client):
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "Welcome to the Transaction Analysis API"}
+    assert response.json() == {"message": "Hello from the automated cloud!"}
 
 def test_upload_csv_success(client):
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
