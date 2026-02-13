@@ -8,4 +8,5 @@ __pycache__/
 transactions.db
 
 transaction-api-key/
+*.pem
 

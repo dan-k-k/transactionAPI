@@ -124,3 +124,4 @@ jobs:
               
             # 4. Run any new database migrations automatically
             docker exec transaction-api alembic upgrade head
+

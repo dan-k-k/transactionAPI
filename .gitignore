@@ -20,4 +20,5 @@ htmlcov/
 docker-compose.override.yml
 
 transaction-api-key/
+*.pem
 
