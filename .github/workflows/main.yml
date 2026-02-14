@@ -51,11 +51,11 @@ jobs:
           pytest tests/ -v
 
   # JOB 2: CD (Build & Push Docker Image)
-  # This runs ONLY if the 'test' job passes
+  # This runs if the test job passes
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    # Only run CD on the main branch (ignore PRs)
+    # Run CD on the main branch (ignore PRs)
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     permissions:

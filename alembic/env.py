@@ -8,27 +8,21 @@ from sqlalchemy import pool
 
 from alembic import context
 
-# 1. Add the project root to the python path so imports work
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-# 2. Import your Settings and Base
 from app.config import settings
 from app.database import Base
-
-# 3. Import  models so they are registered with Base!
 from app import models 
 
-# this is the Alembic Config object
 config = context.config
 
-# 4. Overwrite the sqlalchemy.url in the config with our Pydantic settings
 # This ensures Alembic uses the exact same DB URL as the app
 config.set_main_option("sqlalchemy.url", settings.get_database_url())
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-# 5. Set target_metadata to model's metadata
+# Set target_metadata to model's metadata
 target_metadata = Base.metadata
 
 def run_migrations_offline() -> None:
