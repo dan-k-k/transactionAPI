@@ -4,6 +4,7 @@ name: CI/CD Pipeline
 on:
   push:
   pull_request:
+  workflow_dispatch:
 
 # Define environment variables for the workflow
 env:
@@ -94,7 +95,7 @@ jobs:
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code
