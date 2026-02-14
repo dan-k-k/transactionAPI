@@ -1,6 +1,10 @@
 # tests/conftest.py
 import pytest
 import os
+
+os.environ["PREFECT_TEST_MODE"] = "1"
+os.environ["PREFECT_LOGGING_LEVEL"] = "ERROR"
+
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient

@@ -1,6 +1,5 @@
 # docker-compose.yml
-version: '3.8'
-
+# cloners be aware that I use an override for web and worker local build
 services:
   # 1. LIVE APP SERVICES (For running the API)
   db:
@@ -20,18 +19,44 @@ services:
       timeout: 5s
       retries: 5
 
+  prefect-server:
+    image: prefecthq/prefect:3.6.17-python3.11 
+    command: prefect server start --host 0.0.0.0
+    ports:
+      - "4200:4200"
+    environment:
+      - PREFECT_UI_API_URL=http://localhost:4200/api
   web:
-    # build: . # build locally but you must comment out the `image` line below
-    image: ghcr.io/dan-k-k/transactionapi:latest # Pull from GitHub.
-    # ---
+    # build: . # build locally but you must comment out the `image` line below or create an override
+    image: ghcr.io/dan-k-k/transactionapi:latest
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
-      - .:/app  # Syncs code changes instantly (Hot Reload)
+      - .:/app
+      - shared_data:/shared_data # Mount shared storage
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/transactions_db
+      PREFECT_API_URL: http://prefect-server:4200/api # Point API to Prefect
     depends_on:
+      db:
+        condition: service_healthy
+      prefect-server:
+        condition: service_started
+
+  worker:
+    # build: .
+    image: ghcr.io/dan-k-k/transactionapi:latest # Uses the exact same codebase/image
+    command: python worker.py # Run the worker script instead of Uvicorn
+    volumes:
+      - .:/app
+      - shared_data:/shared_data # Mount shared storage so it sees the CSVs
+    environment:
+      DATABASE_URL: postgresql://user:password@db:5432/transactions_db
+      PREFECT_API_URL: http://prefect-server:4200/api # Point Worker to Prefect
+    depends_on:
+      prefect-server:
+        condition: service_started
       db:
         condition: service_healthy
 
@@ -63,4 +88,5 @@ services:
 
 volumes:
   postgres_data:
+  shared_data: # Define the new shared volume
 
