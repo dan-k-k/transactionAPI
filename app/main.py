@@ -16,7 +16,7 @@ from .config import settings
 from . import processing, models
 from .schemas import SummaryStats
 
-UPLOAD_DIR = "/shared_data"
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/shared_data")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(

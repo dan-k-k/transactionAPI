@@ -1,9 +1,11 @@
 # tests/conftest.py
 import pytest
 import os
+import shutil
 
 os.environ["PREFECT_TEST_MODE"] = "1"
 os.environ["PREFECT_LOGGING_LEVEL"] = "ERROR"
+os.environ["UPLOAD_DIR"] = "./test_shared_data"
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
@@ -70,3 +72,10 @@ def client(db_session):
     
     app.dependency_overrides.clear()
 
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_test_uploads():
+    yield
+    # Runs after all tests are done
+    if os.path.exists("./test_shared_data"):
+        shutil.rmtree("./test_shared_data")
+    
