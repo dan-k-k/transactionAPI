@@ -56,8 +56,8 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    # Run CD on the main branch (ignore PRs)
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Run CD: on the main branch (ignore PRs) || if I want to test a branch live
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     
     permissions:
       contents: read
