@@ -4,7 +4,7 @@ name: CI/CD Pipeline
 on:
   push:
   pull_request:
-  workflow_dispatch
+  workflow_dispatch:
 
 # Define environment variables for the workflow
 env:
