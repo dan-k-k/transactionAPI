@@ -1,10 +1,17 @@
 # app/processing.py
 import pandas as pd
 from sqlalchemy import create_engine
+from sqlalchemy.dialects.postgresql import insert 
 import os
 from prefect import task, flow
 
 CHUNK_SIZE = 50_000
+
+def insert_on_conflict_nothing(table, conn, keys, data_iter): # If the transaction_id already exists, skip it
+    data = [dict(zip(keys, row)) for row in data_iter]
+    stmt = insert(table.table).values(data)
+    stmt = stmt.on_conflict_do_nothing(index_elements=['transaction_id'])
+    conn.execute(stmt)
 
 @task(retries=3, retry_delay_seconds=10)
 def process_csv_to_db(file_path: str, database_url: str):
@@ -23,7 +30,7 @@ def process_csv_to_db(file_path: str, database_url: str):
                 chunk_df['timestamp'] = pd.to_datetime(chunk_df['timestamp'], format='mixed')
                 chunk_df['transaction_amount'] = pd.to_numeric(chunk_df['transaction_amount'])
                 
-                chunk_df.to_sql('transactions', con=connection, if_exists='append', index=False)
+                chunk_df.to_sql('transactions', con=connection, if_exists='append', index=False, method=insert_on_conflict_nothing) 
                 total_rows += len(chunk_df)
                 
             return total_rows
