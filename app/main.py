@@ -1,7 +1,14 @@
 # app/main.py
-# find . -maxdepth 2 -not -path '*/.*'
-# docker system prune -a --volumes -f # nuclear
-# ssh -i /path/key.pem ec2-user@<EC2-public-IP>
+# find . -maxdepth 2 -not -path '*/.*' # directory local
+# docker system prune -a --volumes -f # nuke local
+
+# ssh -i /path/key.pem ec2-user@<EC2-public-IP>                 # log into EC2
+# cd app
+# docker-compose -f docker-compose.prod.yml logs -f worker      # worker log
+# df -h                                                         # check why EC2 froze
+# cat .env                                                      # see db credentials
+# docker ps                                                     # check what containers are running
+# docker run -it --rm postgres:15 psql -h db-transactions.ctaa4eca8hiy.eu-north-1.rds.amazonaws.com -U transactions -d postgres
 from datetime import date
 import shutil
 import uuid
