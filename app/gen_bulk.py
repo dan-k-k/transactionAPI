@@ -1,4 +1,4 @@
-# generate_data.py
+# app/gen_bulk.py
 import csv
 import random
 import argparse # Import argparse
@@ -6,8 +6,9 @@ from pathlib import Path
 from faker import Faker
 
 # Setup argument parser
+num_rows = int(input("Numer of rows: "))
 parser = argparse.ArgumentParser(description="Generate dummy transaction data.")
-parser.add_argument("--rows", type=int, default=1000, help="Number of rows to generate")
+parser.add_argument("--rows", type=int, default=num_rows, help="Number of rows to generate")
 args = parser.parse_args()
 
 TRANSACTIONS = args.rows # Use the argument

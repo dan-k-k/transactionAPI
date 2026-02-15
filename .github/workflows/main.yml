@@ -56,7 +56,7 @@ jobs:
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    # Run CD on the main branch (ignore PRs)
+    # Run CD: on the main branch (ignore PRs) || if I want to test a branch live
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     
     permissions:
@@ -92,37 +92,55 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
   # JOB 3: CD (Deploy to EC2)
-  # This runs ONLY if 'build-and-push' passes
   deploy:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Deploy to EC2 via SSH
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Copy docker-compose.prod.yml to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "/home/ec2-user/app/"
+
+      - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # 1. Stop and remove the old running container (|| true prevents errors if it doesn't exist)
-            docker stop transaction-api || true
-            docker rm transaction-api || true
+            # Navigate to the app directory
+            mkdir -p /home/ec2-user/app
+            cd /home/ec2-user/app
             
-            # 2. Pull the absolute newest version of the image from GitHub
-            docker pull ghcr.io/${{ env.IMAGE_NAME }}:latest
+            # 1. Log in to GitHub Container Registry (so we can pull the private image)
+            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            # 2. Create a .env file on the server with our secrets
+            # This allows docker-compose to read variables like ${POSTGRES_PASSWORD}
+            echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" > .env
+            echo "POSTGRES_USER=transactions" >> .env
+            echo "POSTGRES_PASSWORD=${{ secrets.RDS_PASSWORD }}" >> .env
+            echo "POSTGRES_HOST=${{ secrets.RDS_ENDPOINT }}" >> .env
+            echo "POSTGRES_DB=postgres" >> .env
+            echo "PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}" >> .env
+            echo "PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }}" >> .env
+            # 3. Pull the latest images
+            docker-compose -f docker-compose.prod.yml pull
             
-            # 3. Run the new container, injecting our secrets as environment variables
-            docker run -d \
-              --name transaction-api \
-              -p 80:8000 \
-              -e POSTGRES_USER=transactions \
-              -e POSTGRES_PASSWORD="${{ secrets.RDS_PASSWORD }}" \
-              -e POSTGRES_HOST="${{ secrets.RDS_ENDPOINT }}" \
-              -e POSTGRES_DB=postgres \
-              ghcr.io/${{ env.IMAGE_NAME }}:latest
-              
-            # 4. Run any new database migrations automatically
-            docker exec transaction-api alembic upgrade head
+            # 4. Restart containers with the new image
+            # -d runs in detached mode (background)
+            # --remove-orphans cleans up old containers if you changed service names
+            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+            
+            # 5. Clean up unused images to save disk space
+            docker image prune -f
 

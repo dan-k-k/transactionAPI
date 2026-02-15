@@ -1,13 +1,31 @@
 # app/main.py
-# find . -maxdepth 2 -not -path '*/.*'
-from datetime import date
+# find . -maxdepth 2 -not -path '*/.*' # directory local
+# docker system prune -a --volumes -f # nuke local
 
-from fastapi import FastAPI, UploadFile, File, HTTPException, Depends, BackgroundTasks
-from sqlalchemy import text, Engine
+# ssh -i /path/key.pem ec2-user@<EC2-public-IP>                 # log into EC2
+# cd app
+# docker-compose -f docker-compose.prod.yml logs -f worker      # worker log
+# df -h                                                         # check why EC2 froze
+# cat .env                                                      # see db credentials
+# docker ps                                                     # check what containers are running
+# docker run -it --rm postgres:15 psql -h db-transactions.ctaa4eca8hiy.eu-north-1.rds.amazonaws.com -U transactions -d postgres
+from datetime import date
+import shutil
+import uuid
+import os
+import asyncio
+from fastapi import FastAPI, UploadFile, File, HTTPException, Depends
 from sqlalchemy.orm import Session
-from .database import engine as main_engine, SessionLocal, Base 
-from .schemas import SummaryStats 
-from . import processing, models 
+from prefect.deployments import run_deployment
+from sqlalchemy import text
+
+from .database import engine as main_engine, SessionLocal
+from .config import settings
+from . import processing, models
+from .schemas import SummaryStats
+
+UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/shared_data")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(
     title="Transaction API",
@@ -29,42 +47,41 @@ def get_db():
     finally:
         db.close()
 
-def process_csv_wrapper(contents: bytes, engine: Engine):
-    print(f"Uploading csv...")
-    try:
-        rows = processing.process_csv_to_db(contents, engine)
-        print(f"COMPLETE: {rows} transactions added to DB.")
-        print("You may now query the /summary endpoint.\n")
-        print("user_id is an integer. Dates are in format YYYY-MM-DD.\n")
-    except Exception as e:
-        print(f"Error during processing: {e}.")
-
 # This is the route for the root URL "/"
 @app.get("/")
 def read_root():
     return {"message": "Hello from the automated cloud!"}
 
 @app.post("/upload")
-async def upload_csv(
-    background_tasks: BackgroundTasks,
-    file: UploadFile = File(...), 
-    engine: Engine = Depends(get_engine)
-):
+async def upload_csv(file: UploadFile = File(...)):
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV.")
 
+    # 1. Save the file to the shared volume
+    file_id = str(uuid.uuid4())
+    file_path = os.path.join(UPLOAD_DIR, f"{file_id}_{file.filename}")
+    
     try:
-        contents = await file.read()
-        
-        processing.validate_csv_format(contents) # fast validation
-        background_tasks.add_task(process_csv_wrapper, contents, engine) # add slow full task to backgroundtasks
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        # 2. Trigger Prefect deployment asynchronously (Fire and Forget)
+        # The name must match "FlowName/DeploymentName"
+        asyncio.create_task(
+            run_deployment(
+                name="CSV Ingestion Pipeline/csv-processor",
+                parameters={
+                    "file_path": file_path, 
+                    "database_url": settings.get_database_url()
+                },
+                timeout=0 # Returns immediately, doesn't wait for the flow to finish
+            )
+        )
 
-        return {"message": f"File '{file.filename}' accepted. Please check terminal logs for 'COMPLETE' before querying."}
+        return {"message": f"File '{file.filename}' queued for processing."}
 
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"An error occurred during file processing: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to queue file: {e}")
     
 @app.get("/summary/{user_id}", response_model=SummaryStats)
 def get_summary(
