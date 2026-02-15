@@ -10,7 +10,6 @@ The architecture separates the web server from heavy data processing. It provide
 
 * **Decoupled Data Orchestration:** Uses Prefect to offload heavy CSV processing. 
 * **Automated Cron Jobs:** A scheduled nightly pipeline to automatically generate, processe, and append yesterday's simulated transactions to the database.
-
 * **Cloud Deployment:** Hosted on AWS EC2 with a managed AWS RDS PostgreSQL database.
 * **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
 
@@ -29,7 +28,7 @@ The architecture separates the web server from heavy data processing. It provide
 
 ![API Server Demo](images/API_on_server.png)
 ![Prefect Runs](images/prefect_runs.png)
-![New Transactions](images/API_on_server.png)
+![New Transactions](images/new_transactions.png)
 
 ### Running Locally 
 
