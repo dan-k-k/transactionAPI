@@ -1,7 +1,7 @@
 # tests/test_api.py
 import pytest
 import io
-from unittest.mock import patch
+from unittest.mock import patch, AsyncMock
 
 # --- Tests ---
 
