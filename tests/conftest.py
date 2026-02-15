@@ -79,3 +79,26 @@ def cleanup_test_uploads():
     if os.path.exists("./test_shared_data"):
         shutil.rmtree("./test_shared_data")
     
+@pytest.fixture(scope="function")
+def seed_db_data(db_session):
+    """
+    Directly seeds the test database with dummy data for API summary tests.
+    """
+    from app.processing import process_csv_to_db
+    import tempfile
+
+    csv_content = (
+        "transaction_id,user_id,product_id,timestamp,transaction_amount\n"
+        "550e8400-e29b-41d4-a716-446655440000,123,101,2025-01-15 10:00:00,100.50\n"
+        "550e8400-e29b-41d4-a716-446655440001,123,102,2025-01-16 11:00:00,200.75\n"
+        "550e8400-e29b-41d4-a716-446655440002,456,103,2025-01-17 12:00:00,50.00"
+    )
+    
+    fd, path = tempfile.mkstemp(suffix=".csv")
+    try:
+        with os.fdopen(fd, 'w') as f:
+            f.write(csv_content)
+        process_csv_to_db.fn(file_path=path, database_url=TEST_DATABASE_URL)
+    finally:
+        os.remove(path)
+

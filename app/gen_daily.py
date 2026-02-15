@@ -1,4 +1,4 @@
-# app/generate_data.py
+# app/gen_daily.py
 import csv
 import random
 import uuid

@@ -1,6 +1,7 @@
 # app/main.py
 # find . -maxdepth 2 -not -path '*/.*'
-# docker system prune -a --volumes -f
+# docker system prune -a --volumes -f # nuclear
+# ssh -i /path/key.pem ec2-user@<EC2-public-IP>
 from datetime import date
 import shutil
 import uuid

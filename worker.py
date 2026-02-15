@@ -1,7 +1,7 @@
 # worker.py
 from prefect import serve
 from app.processing import run_csv_pipeline
-from app.generate_data import run_nightly_generation
+from app.gen_daily import run_nightly_generation
 
 if __name__ == "__main__":
     # Create the processor deployment
