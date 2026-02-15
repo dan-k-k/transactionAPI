@@ -11,7 +11,7 @@ def test_read_root(client):
     assert response.json() == {"message": "Hello from the automated cloud!"}
 
 # We use @patch to intercept the call to run_deployment so it doesn't actually try to reach Prefect
-@patch("app.main.run_deployment")
+@patch("app.main.run_deployment", new_callable=AsyncMock) 
 def test_upload_csv_success(mock_run_deployment, client):
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
                   "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11,1,101,2025-01-15 10:00:00,100.50"
@@ -24,7 +24,6 @@ def test_upload_csv_success(mock_run_deployment, client):
 
     assert response.status_code == 200
     assert "queued" in response.json()["message"]
-    # Verify that our API actually attempted to trigger the Prefect pipeline!
     mock_run_deployment.assert_called_once()
 
 def test_invalid_file_type(client):
