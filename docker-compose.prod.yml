@@ -5,7 +5,7 @@ services:
     image: ghcr.io/${IMAGE_NAME}:latest
     restart: always
     ports:
-      - "80:8000"
+      - "80:8000" # Maps port 80 (HTTP) on server to 8000 in container
     volumes:
       - shared_data:/shared_data
     environment:
@@ -15,7 +15,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - PREFECT_API_URL=${PREFECT_API_URL}
       - PREFECT_API_KEY=${PREFECT_API_KEY}
-    # This command migrates the DB first, then starts the app
+    # Command migrates DB, then starts app
     command: >
       sh -c "alembic upgrade head && 
              uvicorn app.main:app --host 0.0.0.0 --port 8000"

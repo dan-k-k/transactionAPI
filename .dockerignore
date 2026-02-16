@@ -3,10 +3,24 @@
 venv/
 __pycache__/
 .git/
+.gitignore
 .pytest_cache/
 *.pyc
 transactions.db
 
 transaction-api-key/
 *.pem
+
+terraform/
+*.tf
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform/
+
+images/
+scripts/
+docker-compose*
+Dockerfile
+README.md
 

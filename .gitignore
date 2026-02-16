@@ -22,3 +22,9 @@ docker-compose.override.yml
 transaction-api-key/
 *.pem
 
+.terraform/
+*.tfstate
+*.tfstate.backup
+*.tfvars
+.terraform.lock.hcl
+
