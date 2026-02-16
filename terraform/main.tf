@@ -169,7 +169,7 @@ resource "aws_instance" "app_server" {
 }
 
 resource "aws_key_pair" "deployer" {
-  key_name   = "deployer-key"
+  key_name   = "deployer-key-v2"
   public_key = var.public_key
 }
 

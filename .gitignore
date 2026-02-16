@@ -27,8 +27,8 @@ transaction-api-key/
 
 terraform_key
 terraform_key.pub
-new_tf_key
-new_tf_key.pub
+tf_key
+tf_key.pub
 
 .vscode/ 
 .idea/
