@@ -9,6 +9,8 @@
 # cat .env                                                      # see db credentials
 # docker ps                                                     # check what containers are running
 # docker run -it --rm postgres:15 psql -h db-transactions.ctaa4eca8hiy.eu-north-1.rds.amazonaws.com -U transactions -d postgres
+
+# terraform apply -var-file="secrets.tfvars"
 from datetime import date
 import shutil
 import uuid

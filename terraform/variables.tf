@@ -1,4 +1,4 @@
-# variables.tf
+# terraform/variables.tf
 
 variable "aws_region" {
   description = "The AWS region to deploy into"

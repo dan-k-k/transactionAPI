@@ -1,4 +1,4 @@
-# main.tf
+# terraform/main.tf
 # --- VPC & Networking ---
 
 resource "aws_vpc" "main" {

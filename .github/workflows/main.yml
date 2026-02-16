@@ -91,9 +91,43 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # JOB 3: CD (Deploy to EC2)
+  # JOB 3: Provision Infrastructure
+  provision:
+    runs-on: ubuntu-latest
+    # Add this IF statement so it only runs on main or dispatch, just like deploy!
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
+    outputs:
+      ec2_public_ip: ${{ steps.set-outputs.outputs.ec2_public_ip }}
+      rds_endpoint: ${{ steps.set-outputs.outputs.rds_endpoint }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: hashicorp/setup-terraform@v2
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var="db_password=${{ secrets.RDS_PASSWORD }}" -var="public_key=${{ secrets.TF_PUBLIC_KEY }}"
+        working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+
+      - name: Export Outputs
+        id: set-outputs
+        run: |
+          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
+          echo "rds_endpoint=$(terraform output -raw rds_host)" >> $GITHUB_OUTPUT
+        working-directory: ./terraform
+
+  # JOB 4: CD (Deploy to EC2)
   deploy:
-    needs: build-and-push
+    # 1. FIX: Now it waits for BOTH tests to pass and infrastructure to be ready
+    needs: [build-and-push, provision] 
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
 
@@ -104,7 +138,8 @@ jobs:
       - name: Copy docker-compose.prod.yml to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
+          # 2. FIX: Use the dynamic IP from Terraform, not the static secret!
+          host: ${{ needs.provision.outputs.ec2_public_ip }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
@@ -113,34 +148,26 @@ jobs:
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
+          # 3. FIX: Use the dynamic IP from Terraform again
+          host: ${{ needs.provision.outputs.ec2_public_ip }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Navigate to the app directory
             mkdir -p /home/ubuntu/app
             cd /home/ubuntu/app
             
-            # 1. Log in to GitHub Container Registry (so we can pull the private image)
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # 2. Create a .env file on the server with our secrets
-            # This allows docker-compose to read variables like ${POSTGRES_PASSWORD}
             echo "IMAGE_NAME=${{ env.IMAGE_NAME }}" > .env
             echo "POSTGRES_USER=transactions" >> .env
             echo "POSTGRES_PASSWORD=${{ secrets.RDS_PASSWORD }}" >> .env
-            echo "POSTGRES_HOST=${{ secrets.RDS_ENDPOINT }}" >> .env
+            # 4. FIX: Use the dynamic RDS endpoint from Terraform
+            echo "POSTGRES_HOST=${{ needs.provision.outputs.rds_endpoint }}" >> .env
             echo "POSTGRES_DB=postgres" >> .env
             echo "PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}" >> .env
             echo "PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }}" >> .env
-            # 3. Pull the latest images
+            
             docker-compose -f docker-compose.prod.yml pull
-            
-            # 4. Restart containers with the new image
-            # -d runs in detached mode (background)
-            # --remove-orphans cleans up old containers if you changed service names
             docker-compose -f docker-compose.prod.yml up -d --remove-orphans
-            
-            # 5. Clean up unused images to save disk space
             docker image prune -f
 
