@@ -1,30 +1,36 @@
 # .gitignore
-
 venv/
 __pycache__/
 *.pyc
 .pytest_cache/
-transactions.db
-dummy_transactions.csv
-
-.DS_Store
-.env
-.env.*
-
-.vscode/ 
-.idea/
-
 .coverage
 htmlcov/
 
-docker-compose.override.yml
+transactions.db
+dummy_transactions.csv
+.DS_Store
 
+.env
+.env.*
 transaction-api-key/
 *.pem
 
-.terraform/
+**/.terraform/
+
 *.tfstate
 *.tfstate.backup
+
 *.tfvars
+*.tfvars.json
+
 .terraform.lock.hcl
+
+terraform_key
+terraform_key.pub
+new_tf_key
+new_tf_key.pub
+
+.vscode/ 
+.idea/
+docker-compose.override.yml
 

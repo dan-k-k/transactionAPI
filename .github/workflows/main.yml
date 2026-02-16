@@ -105,21 +105,21 @@ jobs:
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           source: "docker-compose.prod.yml"
-          target: "/home/ec2-user/app/"
+          target: "/home/ubuntu/app/"
 
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
-          username: ec2-user
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             # Navigate to the app directory
-            mkdir -p /home/ec2-user/app
-            cd /home/ec2-user/app
+            mkdir -p /home/ubuntu/app
+            cd /home/ubuntu/app
             
             # 1. Log in to GitHub Container Registry (so we can pull the private image)
             echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
