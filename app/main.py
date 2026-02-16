@@ -2,15 +2,19 @@
 # find . -maxdepth 2 -not -path '*/.*' # directory local
 # docker system prune -a --volumes -f # nuke local
 
-# ssh -i /path/key.pem ec2-user@<EC2-public-IP>                 # log into EC2
+# chmod 400 tf_key                                              # because tf_key is open (locally)
+# ssh -i /path/key.pem ubuntu@<EC2-public-IP>                 # log into EC2
 # cd app
-# docker-compose -f docker-compose.prod.yml logs -f worker      # worker log
+# sudo docker-compose -f docker-compose.prod.yml logs -f worker # worker log
 # df -h                                                         # check why EC2 froze
 # cat .env                                                      # see db credentials
-# docker ps                                                     # check what containers are running
-# docker run -it --rm postgres:15 psql -h db-transactions.ctaa4eca8hiy.eu-north-1.rds.amazonaws.com -U transactions -d postgres
+# sudo docker ps                                                # check what containers are running
+
+# sudo docker exec -it 56e1c8e0a240 prefect deployment run 'Nightly Data Generator/daily-append-job'
+# sudo docker run -it --rm postgres:15 psql -h terraform-20260216102256681000000002.ctaa4eca8hiy.eu-north-1.rds.amazonaws.com -U transactions -d postgres
 
 # terraform apply -var-file="secrets.tfvars"
+
 from datetime import date
 import shutil
 import uuid

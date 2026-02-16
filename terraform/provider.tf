@@ -10,6 +10,7 @@ terraform {
     key            = "transaction-api/terraform.tfstate"
     region         = "eu-north-1"
     encrypt        = true
+    # dynamodb_table = "terraform-lock"
   }
   required_providers {
     aws = {
