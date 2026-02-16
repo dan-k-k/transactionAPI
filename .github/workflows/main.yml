@@ -128,6 +128,9 @@ jobs:
           echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
           echo "rds_endpoint=$RDS_HOST" >> $GITHUB_OUTPUT
         working-directory: ./terraform
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   # JOB 4: CD (Deploy to EC2)
   deploy:
