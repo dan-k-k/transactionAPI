@@ -102,7 +102,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: hashicorp/setup-terraform@v2
-
+        with:
+          terraform_wrapper: false
+          
       - name: Terraform Init
         run: terraform init
         working-directory: ./terraform
@@ -120,8 +122,11 @@ jobs:
       - name: Export Outputs
         id: set-outputs
         run: |
-          echo "ec2_public_ip=$(terraform output -raw ec2_public_ip)" >> $GITHUB_OUTPUT
-          echo "rds_endpoint=$(terraform output -raw rds_host)" >> $GITHUB_OUTPUT
+          terraform output -json > tf_outputs.json
+          EC2_IP=$(jq -r '.ec2_public_ip.value' tf_outputs.json)
+          RDS_HOST=$(jq -r '.rds_host.value' tf_outputs.json)
+          echo "ec2_public_ip=$EC2_IP" >> $GITHUB_OUTPUT
+          echo "rds_endpoint=$RDS_HOST" >> $GITHUB_OUTPUT
         working-directory: ./terraform
 
   # JOB 4: CD (Deploy to EC2)
