@@ -2,7 +2,6 @@
 import csv
 import random
 import uuid
-# Remove 'os' if not used, keep 'pathlib'
 from pathlib import Path
 from faker import Faker
 from datetime import datetime, timedelta
@@ -45,7 +44,7 @@ def run_nightly_generation():
     run_csv_pipeline(file_path=daily_file_path, database_url=settings.get_database_url())
 
 if __name__ == "__main__":
-    # cron string "1 0 * * *" means 12:01 AM every day
+    # "1 0 * * *" means 12:01 AM every day
     run_nightly_generation.serve(
         name="daily-append-job",
         tags=["generation", "cron"],

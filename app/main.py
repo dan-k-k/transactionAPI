@@ -63,7 +63,6 @@ async def upload_csv(file: UploadFile = File(...)):
     if not file.filename.endswith('.csv'):
         raise HTTPException(status_code=400, detail="Invalid file type. Please upload a CSV.")
 
-    # 1. Save the file to the shared volume
     file_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{file_id}_{file.filename}")
     
@@ -71,8 +70,7 @@ async def upload_csv(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # 2. Trigger Prefect deployment asynchronously (Fire and Forget)
-        # The name must match "FlowName/DeploymentName"
+        # Fire and Forget (prefect deployment triggered)
         asyncio.create_task(
             run_deployment(
                 name="CSV Ingestion Pipeline/csv-processor",
@@ -102,14 +100,14 @@ def get_summary(
     - **start_date**: Start date for the analysis (YYYY-MM-DD)
     - **end_date**: End date for the analysis (YYYY-MM-DD)
     """
-    # Add validation check for date logic
+    # Validation check for date logic
     if start_date > end_date:
         raise HTTPException(
             status_code=400,
             detail="start_date cannot be after end_date"
         )
     
-    # Use parameterised query to prevent SQL injection
+    # Parameterised query to prevent SQL injection
     query = text("""
     SELECT
         MAX(transaction_amount) as max_val,

@@ -1,5 +1,5 @@
 # terraform/main.tf
-# --- VPC & Networking ---
+# VPC & Networking
 
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
@@ -11,7 +11,7 @@ resource "aws_vpc" "main" {
   }
 }
 
-# 1. Public Subnet (For the EC2 App Server)
+# Public Subnet (For the EC2 App Server)
 # Accessible from the internet
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   }
 }
 
-# 2. Private Subnet (For the RDS Database)
+# Private Subnet (For the RDS Database)
 # NOT accessible from the internet directly (Security!)
 resource "aws_subnet" "private_1" {
   vpc_id            = aws_vpc.main.id
@@ -47,7 +47,7 @@ resource "aws_subnet" "private_2" {
   }
 }
 
-# 3. Internet Gateway (Allows the Public Subnet to talk to the web)
+# Internet Gateway (Allows the Public Subnet to talk to the web)
 resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.main.id
 
@@ -56,7 +56,7 @@ resource "aws_internet_gateway" "gw" {
   }
 }
 
-# 4. Route Table (Directions for traffic)
+# Route Table (Directions for traffic)
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
 
@@ -76,7 +76,7 @@ resource "aws_route_table_association" "public_assoc" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-# --- Security Groups ---
+# Security Groups
 
 resource "aws_security_group" "app_sg" {
   name        = "${var.project_name}-app-sg"

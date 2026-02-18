@@ -21,7 +21,7 @@ def process_csv_to_db(file_path: str, database_url: str):
     
     with engine.begin() as connection:
         try:
-            # Read directly from the file path
+
             for chunk_df in pd.read_csv(file_path, chunksize=CHUNK_SIZE):
                 required_cols = {"transaction_id", "user_id", "product_id", "timestamp", "transaction_amount"}
                 if not required_cols.issubset(chunk_df.columns):
@@ -40,8 +40,6 @@ def process_csv_to_db(file_path: str, database_url: str):
 @flow(name="CSV Ingestion Pipeline")
 def run_csv_pipeline(file_path: str, database_url: str):
     process_csv_to_db(file_path, database_url)
-    
-    # Optional: Clean up the file after successful processing to save disk space
     if os.path.exists(file_path):
         os.remove(file_path)
 

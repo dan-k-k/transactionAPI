@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     POSTGRES_USER: str = "user"
     POSTGRES_PASSWORD: str = "password"
     POSTGRES_DB: str = "transactions_db"
-    POSTGRES_HOST: str = "localhost" # Added host so we can switch between 'db' and 'localhost'
+    POSTGRES_HOST: str = "localhost" # Added host so I can switch between 'db' and 'localhost'
     POSTGRES_PORT: str = "5432"
 
     DATABASE_URL: Optional[str] = None

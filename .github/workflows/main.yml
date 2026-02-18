@@ -46,7 +46,6 @@ jobs:
 
       - name: Run Tests
         env:
-          # This URL connects to the service container defined above
           TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
         run: |
           pytest tests/ -v
@@ -94,7 +93,7 @@ jobs:
   # JOB 3: Provision Infrastructure
   provision:
     runs-on: ubuntu-latest
-    # Add this IF statement so it only runs on main or dispatch, just like deploy!
+    # Run provision: on the main branch (ignore PRs) || if I want to test a branch live
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     outputs:
       ec2_public_ip: ${{ steps.set-outputs.outputs.ec2_public_ip }}
@@ -134,7 +133,7 @@ jobs:
 
   # JOB 4: CD (Deploy to EC2)
   deploy:
-    # 1. FIX: Now it waits for BOTH tests to pass and infrastructure to be ready
+    # Waits for tests to pass && infrastructure to be ready
     needs: [build-and-push, provision] 
     runs-on: ubuntu-latest
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
@@ -146,7 +145,6 @@ jobs:
       - name: Copy docker-compose.prod.yml to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          # 2. FIX: Use the dynamic IP from Terraform, not the static secret!
           host: ${{ needs.provision.outputs.ec2_public_ip }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
@@ -156,7 +154,6 @@ jobs:
       - name: Deploy on EC2 via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          # 3. FIX: Use the dynamic IP from Terraform again
           host: ${{ needs.provision.outputs.ec2_public_ip }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}

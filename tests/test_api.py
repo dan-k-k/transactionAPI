@@ -10,7 +10,7 @@ def test_read_root(client):
     assert response.status_code == 200
     assert response.json() == {"message": "Hello from the automated cloud!"}
 
-# We use @patch to intercept the call to run_deployment so it doesn't actually try to reach Prefect
+# @patch to intercept the call to run_deployment so it doesn't actually try to reach Prefect
 @patch("app.main.run_deployment", new_callable=AsyncMock) 
 def test_upload_csv_success(mock_run_deployment, client):
     csv_content = "transaction_id,user_id,product_id,timestamp,transaction_amount\n" \
@@ -33,8 +33,7 @@ def test_invalid_file_type(client):
     )
     assert response.status_code == 400
 
-# To test the summary endpoint, we still need data in the DB. 
-# We can use the client to test the API layer, but rely on a fixture to seed the DB.
+# Client to test the API layer; rely on a fixture to seed the DB.
 def test_get_summary_success(client, seed_db_data):
     response = client.get("/summary/123?start_date=2025-01-01&end_date=2025-12-31")
     assert response.status_code == 200

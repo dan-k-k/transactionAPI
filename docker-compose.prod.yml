@@ -5,7 +5,7 @@ services:
     image: ghcr.io/${IMAGE_NAME}:latest
     restart: always
     ports:
-      - "80:8000" # Maps port 80 (HTTP) on server to 8000 in container
+      - "80:8000" 
     volumes:
       - shared_data:/shared_data
     environment:
@@ -15,10 +15,10 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - PREFECT_API_URL=${PREFECT_API_URL}
       - PREFECT_API_KEY=${PREFECT_API_KEY}
-    # Command migrates DB, then starts app
+    # Migrates DB, starts app
     command: >
       sh -c "alembic upgrade head && 
-             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000" 
 
   # The Worker Service (Scheduler)
   worker:
@@ -34,6 +34,10 @@ services:
       - PREFECT_API_URL=${PREFECT_API_URL}
       - PREFECT_API_KEY=${PREFECT_API_KEY}
     command: python worker.py
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
 volumes:
   shared_data:

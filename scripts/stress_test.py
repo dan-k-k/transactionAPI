@@ -8,13 +8,12 @@ import uuid
 
 # Configuration
 API_URL = "http://localhost:8000/upload"
-NUM_ROWS = 200_000  # Large enough to trigger multiple chunks (4 chunks of 50k)
+NUM_ROWS = 10_000_000  # Large enough to trigger multiple chunks of 50k
 FILENAME = "large_test_file.csv"
 
 def generate_large_csv():
     print(f"Generating {NUM_ROWS} rows of dummy data...")
     
-    # Generate data using NumPy for speed
     df = pd.DataFrame({
         'transaction_id': [str(uuid.uuid4()) for _ in range(NUM_ROWS)],
         'user_id': np.random.randint(1, 1000, NUM_ROWS),
@@ -47,12 +46,11 @@ def test_upload_performance():
         print(f"Failed. Status: {response.status_code}")
         print(f"Response: {response.text}")
     
-    # Clean up
     os.remove(FILENAME)
 
 if __name__ == "__main__":
     try:
-        # Check if server is running
+        # Check if the server is running
         requests.get("http://localhost:8000/")
         test_upload_performance()
     except requests.exceptions.ConnectionError:

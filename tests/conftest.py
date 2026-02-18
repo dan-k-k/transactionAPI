@@ -11,25 +11,24 @@ from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 
-# Import app and global variables
 from app.main import app, get_engine, get_db
 from app.database import Base
 
-# 1. Determine DB URL
-# Use a specific test database name to avoid wiping dev data
+# Determine DB URL
+# Specific test database name to avoid wiping dev data
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL", 
     "postgresql://user:password@localhost:5432/test_transactions_db" 
 )
 
-# For environments providing 'postgres://'
+# Environments providing 'postgres://'
 if TEST_DATABASE_URL.startswith("postgres://"):
     TEST_DATABASE_URL = TEST_DATABASE_URL.replace("postgres://", "postgresql://")
 
-# 2. Configure Engine
+# Configure Engine
 test_engine = create_engine(TEST_DATABASE_URL)
 
-# 3. Create Testing Session
+# Create Testing Session
 TestSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=test_engine)
 
 @pytest.fixture(scope="session", autouse=True)
@@ -75,7 +74,6 @@ def client(db_session):
 @pytest.fixture(scope="session", autouse=True)
 def cleanup_test_uploads():
     yield
-    # Runs after all tests are done
     if os.path.exists("./test_shared_data"):
         shutil.rmtree("./test_shared_data")
     

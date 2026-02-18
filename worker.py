@@ -4,14 +4,14 @@ from app.processing import run_csv_pipeline
 from app.gen_daily import run_nightly_generation
 
 if __name__ == "__main__":
-    # Create the processor deployment
+    # 1. Upload any bulk CSV to add to the database. Ignores duplicate tids.
     csv_processor = run_csv_pipeline.to_deployment(
         name="csv-processor",
         tags=["csv"],
         description="Processes uploaded CSVs in the background."
     )
     
-    # Create the scheduled generator deployment
+    # 2. Automatic full-day new data.
     nightly_generator = run_nightly_generation.to_deployment(
         name="daily-append-job",
         tags=["generation", "cron"],
@@ -19,6 +19,5 @@ if __name__ == "__main__":
         description="Appends yesterday's dummy transactions."
     )
 
-    # Serve both from this single worker process!
-    serve(csv_processor, nightly_generator)
+    serve(csv_processor, nightly_generator, limit=1, pause_on_shutdown=False) # serve both
 
