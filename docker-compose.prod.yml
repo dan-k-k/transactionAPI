@@ -34,10 +34,7 @@ services:
       - PREFECT_API_URL=${PREFECT_API_URL}
       - PREFECT_API_KEY=${PREFECT_API_KEY}
     command: python worker.py
-    deploy:
-      resources:
-        limits:
-          memory: 512M
+    mem_limit: 512m 
 
 volumes:
   shared_data:
