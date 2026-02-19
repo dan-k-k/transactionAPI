@@ -14,11 +14,12 @@ The architecture separates the web server from heavy data processing. It provide
 * **Cloud Deployment:** Hosted on AWS EC2 (Ubuntu) with a managed AWS RDS PostgreSQL database.
 * **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers Terraform infrastructure checks, automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
 * **Advanced SQL Analytics:** Complex data aggregations calculating user spending volatility, global ranking, and transaction velocity using PostgreSQL Window Functions and CTEs.
+* **Interactive Data Visualisation**: Dynamically generates frontend HTML dashboards using Plotly to visualise daily spending trends and 7-day moving averages, utilising PostgreSQL generate_series to accurately calculate rolling averages across time-series gaps.
 
 ---
 
 ### Tech Stack
-* **Backend:** Python 3.11, FastAPI, Pandas, Pytest
+* **Backend:** Python 3.11, FastAPI, Pandas, Pytest, Plotly
 * **Data Orchestration:** Prefect, SQLAlchemy, Alembic
 * **Infrastructure:** Terraform, Docker, Docker Compose, AWS EC2 (Ubuntu 22.04), AWS RDS (PostgreSQL 15)
 * **DevOps:** GitHub Actions (CI/CD), GitHub Container Registry (ghcr.io)
@@ -28,10 +29,14 @@ The architecture separates the web server from heavy data processing. It provide
 *Note: The live AWS EC2 and RDS instances may be down to conserve AWS Free Tier limits.*
 *... Try `http://51.20.107.234/docs`*
 
-![API Server Demo](images/API_on_server.png)
+![API Server Demo](images/API_on_server1.png)
+
 ![Prefect Runs](images/prefect_runs.png)
+
 ![New Transactions](images/new_transactions.png)
+
 ![7d Moving Average](images/7daymoving.png)
+
 
 ### Running Locally
 
@@ -51,7 +56,7 @@ docker compose up
 * **FastAPI Swagger UI:** Navigate to http://localhost:8000/docs
 * **Prefect Dashboard:** Navigate to http://localhost:4200 to view the active data pipelines and scheduled runs.
 
-### Running the Application Locally
+### API Endpoints & Usage
 
 Navigate to http://localhost:8000/docs
 
@@ -69,6 +74,11 @@ Navigate to http://localhost:8000/docs
 **3. Analyse Risk Profile**
   1. Click on the GET `/analytics/risk-profile/{user_id}` endpoint.
   2. Enter a `user_id` to execute an advanced SQL query (using CTEs and Window Functions) that calculates the user's global whale rank, spending volatility, and transaction velocity.
+
+**4. View Interactive Dashboard**
+  1. Open your browser and navigate directly to `http://localhost:8000/dashboard/1` (replace `1` with any valid `user_id`).
+  2. Explore the interactive Plotly chart displaying daily spend and the accurate 7-day moving average.
+  *(Note: For the raw JSON payload of this trend, use the GET `/analytics/spend-trend/{user_id}` endpoint in Swagger).*
 
 ### Developing Locally
 
