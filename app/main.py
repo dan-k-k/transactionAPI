@@ -150,9 +150,9 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
             SELECT 
                 user_id,
                 COUNT(*) as total_transactions,
-                SUM(amount) as total_spend,
-                AVG(amount) as avg_spend,
-                COALESCE(STDDEV_POP(amount), 0) as spend_stddev
+                SUM(transaction_amount) as total_spend,
+                AVG(transaction_amount) as avg_spend,
+                COALESCE(STDDEV_POP(transaction_amount), 0) as spend_stddev
             FROM transactions
             GROUP BY user_id
         ),
@@ -170,7 +170,7 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
         UserTimeGaps AS (
             SELECT 
                 user_id,
-                amount,
+                transaction_amount,
                 timestamp,
                 EXTRACT(EPOCH FROM (timestamp - LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp))) / 60 as mins_since_last_txn
             FROM transactions
@@ -181,20 +181,18 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
             ROUND(r.volatility_index, 2) as volatility_index,
             r.total_spend,
             ROUND(MIN(g.mins_since_last_txn), 2) as shortest_txn_gap_mins,
-            MAX(g.amount) as max_single_spike
+            MAX(g.transaction_amount) as max_single_spike
         FROM GlobalRanking r
         LEFT JOIN UserTimeGaps g ON r.user_id = g.user_id
         WHERE r.user_id = :uid
         GROUP BY r.whale_rank, r.volatility_index, r.total_spend;
     """)
 
-    # Execute the raw SQL safely
     result = db.execute(query, {"uid": user_id}).fetchone()
 
     if not result:
         raise HTTPException(status_code=404, detail="User not found or no transactions exist.")
 
-    # Format the response
     return {
         "user_id": user_id,
         "risk_metrics": {
