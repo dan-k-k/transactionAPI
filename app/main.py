@@ -30,6 +30,7 @@ import plotly.graph_objects as go
 from .database import engine as main_engine, SessionLocal
 from .config import settings
 from .schemas import SummaryStats, SpendTrendItem
+from . import models  # noqa: F401
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/shared_data")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
