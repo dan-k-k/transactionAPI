@@ -172,7 +172,7 @@ jobs:
             echo "PREFECT_API_URL=${{ secrets.PREFECT_API_URL }}" >> .env
             echo "PREFECT_API_KEY=${{ secrets.PREFECT_API_KEY }}" >> .env
             
-            docker-compose -f docker-compose.prod.yml pull
-            docker-compose -f docker-compose.prod.yml up -d --remove-orphans
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker image prune -f
 
