@@ -31,8 +31,9 @@ The architecture separates the web server from heavy data processing. It provide
 ![API Server Demo](images/API_on_server.png)
 ![Prefect Runs](images/prefect_runs.png)
 ![New Transactions](images/new_transactions.png)
+![7d Moving Average](images/7daymoving.png)
 
-### Running Locally 
+### Running Locally
 
 **1. Clone the Repository:**
 ```sh
