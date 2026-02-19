@@ -33,7 +33,7 @@ def generate_daily_batch(rows: int = 150):
                 "user_id": fake.random_int(min=1, max=1000),
                 "product_id": fake.random_int(min=1, max=500),
                 "timestamp": fake.date_time_between(start_date=yesterday_start, end_date=yesterday_end),
-                "transaction_amount": round(random.uniform(5.0, 500.0), 2),
+                "transaction_amount": round(random.uniform(5.0, 500.0), 2),  # nosec B311
             })
 
     return str(file_path)

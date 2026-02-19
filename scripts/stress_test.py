@@ -34,7 +34,7 @@ def test_upload_performance():
     
     with open(FILENAME, 'rb') as f:
         files = {'file': (FILENAME, f, 'text/csv')}
-        response = requests.post(API_URL, files=files)
+        response = requests.post(API_URL, files=files, timeout=30)
     
     end_time = time.time()
     duration = end_time - start_time
@@ -51,7 +51,7 @@ def test_upload_performance():
 if __name__ == "__main__":
     try:
         # Check if the server is running
-        requests.get("http://localhost:8000/")
+        requests.get("http://localhost:8000/", timeout=10)
         test_upload_performance()
     except requests.exceptions.ConnectionError:
         print("Error: Could not connect to API.")

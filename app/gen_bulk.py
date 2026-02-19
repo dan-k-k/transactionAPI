@@ -28,7 +28,7 @@ def generate_bulk_csv(rows: int):
                 "user_id": fake.random_int(min=1, max=1000),
                 "product_id": fake.random_int(min=1, max=500),
                 "timestamp": fake.date_time_between(start_date="-1y", end_date="now"),
-                "transaction_amount": round(random.uniform(5.0, 500.0), 2),
+                "transaction_amount": round(random.uniform(5.0, 500.0), 2),  # nosec B311
             })
 
     return str(file_path)
