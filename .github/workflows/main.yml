@@ -12,8 +12,33 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  # JOB 1: CI (Run Tests)
+  # JOB 1: Code Quality & Security Scanning
+  lint-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install Linter and Scanner
+        run: pip install ruff bandit
+
+      - name: Run Ruff (Linting)
+        # The --output-format=github makes errors show up inline in the GitHub PR/Commit UI!
+        run: ruff check . --output-format=github
+
+      - name: Run Bandit (Security)
+        # The -r means recursive (check all folders). 
+        # The -x ./tests excludes your test folder so it doesn't flag your dummy test database passwords.
+        run: bandit -r . -x ./tests
+
+  # JOB 2: CI (Run Tests)
   test:
+    needs: lint-and-scan
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -50,7 +75,7 @@ jobs:
         run: |
           pytest tests/ -v
 
-  # JOB 2: CD (Build & Push Docker Image)
+  # JOB 3: CD (Build & Push Docker Image)
   # This runs if the test job passes
   build-and-push:
     needs: test
@@ -90,7 +115,7 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-  # JOB 3: Provision Infrastructure
+  # JOB 4: Provision Infrastructure
   provision:
     runs-on: ubuntu-latest
     # Run provision: on the main branch (ignore PRs) || if I want to test a branch live
@@ -131,7 +156,7 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
-  # JOB 4: CD (Deploy to EC2)
+  # JOB 5: CD (Deploy to EC2)
   deploy:
     # Waits for tests to pass && infrastructure to be ready
     needs: [build-and-push, provision] 
