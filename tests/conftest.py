@@ -7,7 +7,7 @@ os.environ["PREFECT_TEST_MODE"] = "1"
 os.environ["PREFECT_LOGGING_LEVEL"] = "ERROR"
 os.environ["UPLOAD_DIR"] = "./test_shared_data"
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi.testclient import TestClient
 

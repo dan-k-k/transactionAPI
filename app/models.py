@@ -1,5 +1,5 @@
 # app/models.py
-from sqlalchemy import Column, Integer, String, Float, DateTime, Index, DECIMAL 
+from sqlalchemy import Column, Integer, DateTime, Index, DECIMAL 
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from .database import Base

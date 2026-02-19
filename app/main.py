@@ -29,7 +29,6 @@ import plotly.graph_objects as go
 
 from .database import engine as main_engine, SessionLocal
 from .config import settings
-from . import processing, models
 from .schemas import SummaryStats, SpendTrendItem
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/shared_data")
