@@ -207,33 +207,44 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
         "analysis": "High volatility implies erratic spending. Short transaction gaps may indicate automated or fraudulent activity."
     }
     
-@app.get("/analytics/spend-trend/{user_id}", response_model=list[SpendTrendItem])
-def get_user_spend_trend(user_id: int, db: Session = Depends(get_db)):
-    """
-    Returns pure JSON of daily spend and a 7-day rolling average.
-    Uses Postgres INTERVAL to correctly calculate gaps in days where spend was $0.
-    """
+def fetch_spend_trend_data(user_id: int, db: Session):
+    """Helper function to fetch and calculate accurate 7-day rolling averages."""
     query = text("""
-        WITH daily_sums AS (
+        WITH date_range AS (
+            SELECT MIN(DATE(timestamp)) as start_date, MAX(DATE(timestamp)) as end_date
+            FROM transactions
+            WHERE user_id = :uid
+        ),
+        calendar AS (
+            SELECT generate_series(start_date::timestamp, end_date::timestamp, '1 day'::interval)::date as spend_date
+            FROM date_range
+        ),
+        daily_sums AS (
             SELECT 
-                DATE(timestamp)::timestamp as spend_date,
+                DATE(timestamp) as spend_date,
                 SUM(transaction_amount) as daily_total
             FROM transactions
             WHERE user_id = :uid
             GROUP BY DATE(timestamp)
         )
         SELECT 
-            spend_date::date as spend_date,
-            daily_total,
-            AVG(daily_total) OVER (
-                ORDER BY spend_date 
-                RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW
+            c.spend_date,
+            COALESCE(d.daily_total, 0) as daily_total,
+            AVG(COALESCE(d.daily_total, 0)) OVER (
+                ORDER BY c.spend_date 
+                ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
             ) as rolling_7d_avg
-        FROM daily_sums
-        ORDER BY spend_date;
+        FROM calendar c
+        LEFT JOIN daily_sums d ON c.spend_date = d.spend_date
+        ORDER BY c.spend_date;
     """)
+    return db.execute(query, {"uid": user_id}).fetchall()
 
-    results = db.execute(query, {"uid": user_id}).fetchall()
+
+@app.get("/analytics/spend-trend/{user_id}", response_model=list[SpendTrendItem])
+def get_user_spend_trend(user_id: int, db: Session = Depends(get_db)):
+    """Returns pure JSON of daily spend and a 7-day rolling average."""
+    results = fetch_spend_trend_data(user_id, db)
 
     if not results:
         raise HTTPException(status_code=404, detail="No transactions found for this user.")
@@ -246,45 +257,23 @@ def get_user_spend_trend(user_id: int, db: Session = Depends(get_db)):
         ) for row in results
     ]
 
+
 @app.get("/dashboard/{user_id}", response_class=HTMLResponse)
 def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
-    """
-    Dynamically generates an interactive Plotly HTML dashboard for the user.
-    """
-    # 1. Fetch the data using the same query logic
-    query = text("""
-        WITH daily_sums AS (
-            SELECT 
-                DATE(timestamp)::timestamp as spend_date,
-                SUM(transaction_amount) as daily_total
-            FROM transactions
-            WHERE user_id = :uid
-            GROUP BY DATE(timestamp)
-        )
-        SELECT 
-            spend_date::date as spend_date,
-            daily_total,
-            AVG(daily_total) OVER (
-                ORDER BY spend_date 
-                RANGE BETWEEN INTERVAL '6 days' PRECEDING AND CURRENT ROW
-            ) as rolling_7d_avg
-        FROM daily_sums
-        ORDER BY spend_date;
-    """)
-    results = db.execute(query, {"uid": user_id}).fetchall()
+    """Dynamically generates an interactive Plotly HTML dashboard for the user."""
+    results = fetch_spend_trend_data(user_id, db)
 
     if not results:
         return HTMLResponse(content=f"<h2>No data available to plot for User {user_id}</h2>", status_code=404)
 
-    # 2. Unpack the data for Plotly
+    # Unpack the data for Plotly
     dates = [row.spend_date for row in results]
     daily_totals = [row.daily_total for row in results]
     rolling_avgs = [row.rolling_7d_avg for row in results]
 
-    # 3. Create the interactive figure
+    # Create the interactive figure
     fig = go.Figure()
     
-    # Add Daily Spend as a Bar Chart
     fig.add_trace(go.Bar(
         x=dates, 
         y=daily_totals, 
@@ -293,7 +282,6 @@ def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
         marker_color='lightblue'
     ))
     
-    # Add 7-Day Moving Average as a Line Chart
     fig.add_trace(go.Scatter(
         x=dates, 
         y=rolling_avgs, 
@@ -302,7 +290,6 @@ def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
         line=dict(color='darkblue', width=3)
     ))
 
-    # Clean up the layout
     fig.update_layout(
         title=f"Transaction Analysis: User {user_id}",
         xaxis_title="Date",
@@ -312,9 +299,7 @@ def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
     )
 
-    # 4. Render directly to HTML (no physical files saved to the server!)
     html_content = fig.to_html(full_html=True, include_plotlyjs='cdn')
-    
     return HTMLResponse(content=html_content)
 
 if __name__ == "__main__":
