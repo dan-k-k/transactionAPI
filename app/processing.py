@@ -5,7 +5,7 @@ from sqlalchemy.dialects.postgresql import insert
 import os
 from prefect import task, flow
 
-CHUNK_SIZE = 50_000
+CHUNK_SIZE = 5_000
 
 def insert_on_conflict_nothing(table, conn, keys, data_iter): # If the transaction_id already exists, skip it
     data = [dict(zip(keys, row)) for row in data_iter]
