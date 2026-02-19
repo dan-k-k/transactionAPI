@@ -139,6 +139,74 @@ def get_summary(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database query failed: {e}")
     
+@app.get("/analytics/risk-profile/{user_id}")
+def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
+    """
+    Generates an advanced financial risk profile for a user, calculating 
+    spending volatility, global ranking, and transaction velocity.
+    """
+    query = text("""
+        WITH UserAggregates AS (
+            SELECT 
+                user_id,
+                COUNT(*) as total_transactions,
+                SUM(amount) as total_spend,
+                AVG(amount) as avg_spend,
+                COALESCE(STDDEV_POP(amount), 0) as spend_stddev
+            FROM transactions
+            GROUP BY user_id
+        ),
+        GlobalRanking AS (
+            SELECT 
+                user_id,
+                total_spend,
+                CASE 
+                    WHEN avg_spend = 0 THEN 0 
+                    ELSE (spend_stddev / avg_spend) 
+                END as volatility_index,
+                DENSE_RANK() OVER (ORDER BY total_spend DESC) as whale_rank
+            FROM UserAggregates
+        ),
+        UserTimeGaps AS (
+            SELECT 
+                user_id,
+                amount,
+                timestamp,
+                EXTRACT(EPOCH FROM (timestamp - LAG(timestamp) OVER (PARTITION BY user_id ORDER BY timestamp))) / 60 as mins_since_last_txn
+            FROM transactions
+            WHERE user_id = :uid
+        )
+        SELECT 
+            r.whale_rank,
+            ROUND(r.volatility_index, 2) as volatility_index,
+            r.total_spend,
+            ROUND(MIN(g.mins_since_last_txn), 2) as shortest_txn_gap_mins,
+            MAX(g.amount) as max_single_spike
+        FROM GlobalRanking r
+        LEFT JOIN UserTimeGaps g ON r.user_id = g.user_id
+        WHERE r.user_id = :uid
+        GROUP BY r.whale_rank, r.volatility_index, r.total_spend;
+    """)
+
+    # Execute the raw SQL safely
+    result = db.execute(query, {"uid": user_id}).fetchone()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found or no transactions exist.")
+
+    # Format the response
+    return {
+        "user_id": user_id,
+        "risk_metrics": {
+            "global_whale_rank": int(result.whale_rank),
+            "spending_volatility_index": float(result.volatility_index),
+            "total_lifetime_spend": float(result.total_spend),
+            "max_single_transaction_spike": float(result.max_single_spike),
+            "shortest_time_between_transactions_mins": float(result.shortest_txn_gap_mins) if result.shortest_txn_gap_mins else None
+        },
+        "analysis": "High volatility implies erratic spending. Short transaction gaps may indicate automated or fraudulent activity."
+    }
+    
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

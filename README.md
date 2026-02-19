@@ -1,30 +1,31 @@
 ## Transaction Analysis API 
 
-This project is a decoupled RESTful API and ETL service built with Python, FastAPI, Prefect, and PostgreSQL. It is fully containerised using Docker and deployed to AWS (EC2 & RDS) with a fully automated CI/CD pipeline via GitHub Actions. 
+This project is a decoupled RESTful API and ETL service built with Python, FastAPI, Prefect, and PostgreSQL. It is fully containerised using Docker and deployed to AWS (EC2 & RDS) with a fully automated CI/CD pipeline via GitHub Actions and Terraform.
 
-The architecture separates the web server from heavy data processing. It provides API endpoints for users to upload massive CSV files and retrieve summarised statistics, while background worker containers handle data chunking, automated nightly data generation, and idempotent database insertions. 
+The architecture separates the web server from heavy data processing. It provides API endpoints for users to upload massive CSV files and retrieve summarised statistics, while background worker containers handle data chunking, automated nightly data generation, and idempotent database insertions.
 
 ---
 
 ### Features
 
+* **Infrastructure as Code (IaC):** Automated cloud infrastructure provisioning (VPC, Subnets, EC2, RDS) using Terraform with remote S3 state management.
 * **Decoupled Data Orchestration:** Uses Prefect to offload heavy CSV processing. 
-* **Automated Cron Jobs:** A scheduled nightly pipeline to automatically generate, processe, and append yesterday's simulated transactions to the database.
-* **Cloud Deployment:** Hosted on AWS EC2 with a managed AWS RDS PostgreSQL database.
-* **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
+* **Automated Cron Jobs:** A scheduled nightly pipeline to automatically generate, process, and append yesterday's simulated transactions to the database.
+* **Cloud Deployment:** Hosted on AWS EC2 (Ubuntu) with a managed AWS RDS PostgreSQL database.
+* **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers Terraform infrastructure checks, automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
 
 ---
 
 ### Tech Stack
 * **Backend:** Python 3.11, FastAPI, Pandas, Pytest
 * **Data Orchestration:** Prefect, SQLAlchemy, Alembic
-* **Infrastructure:** Docker, Docker Compose, AWS EC2 (Amazon Linux), AWS RDS (PostgreSQL 15)
+* **Infrastructure:** Terraform, Docker, Docker Compose, AWS EC2 (Ubuntu 22.04), AWS RDS (PostgreSQL 15)
 * **DevOps:** GitHub Actions (CI/CD), GitHub Container Registry (ghcr.io)
 
 ---
 
 *Note: The live AWS EC2 and RDS instances may be down to conserve AWS Free Tier limits.*
-*... Try `http://13.62.46.228/docs#/`*
+*... Try `http://51.20.107.234/docs`*
 
 ![API Server Demo](images/API_on_server.png)
 ![Prefect Runs](images/prefect_runs.png)
