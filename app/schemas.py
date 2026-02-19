@@ -1,6 +1,6 @@
 # app/schemas.py
 from pydantic import BaseModel
-from datetime import datetime
+from datetime import datetime, date
 
 class TransactionBase(BaseModel):
     transaction_id: str
@@ -14,4 +14,9 @@ class SummaryStats(BaseModel):
     max_transaction: float
     min_transaction: float
     mean_transaction: float
+
+class SpendTrendItem(BaseModel):
+    spend_date: date
+    daily_total: float
+    rolling_7d_avg: float
 
