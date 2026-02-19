@@ -205,6 +205,52 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
         "analysis": "High volatility implies erratic spending. Short transaction gaps may indicate automated or fraudulent activity."
     }
     
+@app.get("/analytics/moving-average/{user_id}")
+def get_moving_average(user_id: int, db: Session = Depends(get_db)):
+    """
+    Calculates the 7-day rolling average of a user's daily spend.
+    Returns a time-series dataset ideal for plotting in Plotly or frontend dashboards.
+    """
+    query = text("""
+        WITH DailySpend AS (
+            SELECT 
+                DATE(timestamp) as txn_date,
+                SUM(transaction_amount) as daily_total
+            FROM transactions
+            WHERE user_id = :uid
+            GROUP BY DATE(timestamp)
+        )
+        SELECT 
+            txn_date,
+            daily_total,
+            ROUND(AVG(daily_total) OVER (
+                ORDER BY txn_date
+                ROWS BETWEEN 6 PRECEDING AND CURRENT ROW
+            ), 2) as moving_avg_7d
+        FROM DailySpend
+        ORDER BY txn_date;
+    """)
+
+    results = db.execute(query, {"uid": user_id}).fetchall()
+
+    if not results:
+        raise HTTPException(status_code=404, detail="No transactions found for this user.")
+
+    time_series_data = [
+        {
+            "date": str(row.txn_date),
+            "daily_total": float(row.daily_total),
+            "moving_average_7d": float(row.moving_avg_7d)
+        }
+        for row in results
+    ]
+
+    return {
+        "user_id": user_id,
+        "data_points": len(time_series_data),
+        "time_series": time_series_data
+    }
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

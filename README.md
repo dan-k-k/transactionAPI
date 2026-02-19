@@ -13,6 +13,7 @@ The architecture separates the web server from heavy data processing. It provide
 * **Automated Cron Jobs:** A scheduled nightly pipeline to automatically generate, process, and append yesterday's simulated transactions to the database.
 * **Cloud Deployment:** Hosted on AWS EC2 (Ubuntu) with a managed AWS RDS PostgreSQL database.
 * **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers Terraform infrastructure checks, automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
+* **Advanced SQL Analytics:** Complex data aggregations calculating user spending volatility, global ranking, and transaction velocity using PostgreSQL Window Functions and CTEs.
 
 ---
 
@@ -53,15 +54,20 @@ docker compose up
 
 Navigate to http://localhost:8000/docs
 
-**1. Background Upload**
-  1. Click on the POST /upload endpoint. "Try it out".
-  2. Upload a sample CSV. You can generate transactions with `python -m app.gen_bulk`.
-  3. Check the Prefect Dashboard (http://localhost:4200) to watch the CSV Ingestion Pipeline worker in real time.
+**1. Generate & Ingest Data**
+  1. Open the Prefect Dashboard (http://localhost:4200) and go to **Deployments**.
+  2. Click on the **Bulk Data Generator Pipeline**. 
+  3. Click **Run -> Custom Run**, enter your desired `num_rows` (e.g., 50000), and execute. The worker will generate the data and automatically trigger the ingestion subflow.
+  *(Alternatively, you can manually upload your own CSV via the POST `/upload` endpoint in Swagger).*
 
 **2. Get User Summary**
-  1. Click on the GET /summary/{user_id} endpoint. Click "Try it out".
-  2. Enter a user_id eg. '1' and a date range in the format YYYY-MM-DD.
+  1. Click on the GET `/summary/{user_id}` endpoint. Click "Try it out".
+  2. Enter a `user_id` (e.g., '1') and a date range in the format YYYY-MM-DD.
   3. Click Execute to see the aggregated max, min, and mean statistics.
+
+**3. Analyse Risk Profile**
+  1. Click on the GET `/analytics/risk-profile/{user_id}` endpoint.
+  2. Enter a `user_id` to execute an advanced SQL query (using CTEs and Window Functions) that calculates the user's global whale rank, spending volatility, and transaction velocity.
 
 ### Developing Locally
 
