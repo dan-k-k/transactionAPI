@@ -12,7 +12,7 @@ The architecture separates the web server from heavy data processing. It provide
 * **Decoupled Data Orchestration:** Uses Prefect to offload heavy CSV processing. 
 * **Automated Cron Jobs:** A scheduled nightly pipeline to automatically generate, process, and append yesterday's simulated transactions to the database.
 * **Cloud Deployment:** Hosted on AWS EC2 (Ubuntu) with a managed AWS RDS PostgreSQL database.
-* **Continuous Deployment (CI/CD): Fully automated pipeline via GitHub Actions. Pushing to main triggers strict quality gates (Ruff linting & Bandit security scanning), Terraform infrastructure checks, automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
+* **Continuous Deployment (CI/CD):** Fully automated pipeline via GitHub Actions. Pushing to main triggers strict quality gates (Ruff linting & Bandit security scanning), Terraform infrastructure checks, automated testing (Pytest), Docker image builds to GitHub Container Registry, and zero-downtime deployment to the EC2 server via SSH.
 * **Advanced SQL Analytics:** Complex data aggregations calculating user spending volatility, global ranking, and transaction velocity using PostgreSQL Window Functions and CTEs.
 * **Interactive Data Visualisation**: Dynamically generates frontend HTML dashboards using Plotly to visualise daily spending trends and 7-day moving averages, utilising PostgreSQL generate_series to accurately calculate rolling averages across time-series gaps.
 
