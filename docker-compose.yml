@@ -1,5 +1,5 @@
 # docker-compose.yml
-# cloners be aware that I use an override for web and worker local build
+# cloners: be aware that I use an override for web and worker local build
 services:
   # 1. LIVE APP SERVICES
   db:

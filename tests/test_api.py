@@ -64,7 +64,7 @@ def test_get_risk_profile_success(client, seed_db_data):
     assert "risk_metrics" in data
     metrics = data["risk_metrics"]
     
-    # We seeded user 123 with two transactions ($100.50 and $200.75) exactly 25 hours apart
+    # Seeded user 123 with two transactions ($100.50 and $200.75) exactly 25 hours apart
     assert metrics["total_lifetime_spend"] == 301.25
     assert metrics["shortest_time_between_transactions_mins"] == 1500.0 # 25 hours * 60 mins
     assert metrics["max_single_transaction_spike"] == 200.75

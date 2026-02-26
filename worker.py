@@ -2,7 +2,7 @@
 from prefect import serve
 from app.processing import run_csv_pipeline
 from app.gen_daily import run_nightly_generation
-from app.gen_bulk import run_bulk_generation # <-- Add this import
+from app.gen_bulk import run_bulk_generation
 
 if __name__ == "__main__":
     # 1. Upload any bulk CSV to add to the database.

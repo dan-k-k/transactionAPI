@@ -14,7 +14,6 @@ from fastapi.testclient import TestClient
 from app.main import app, get_engine, get_db
 from app.database import Base
 
-# Determine DB URL
 # Specific test database name to avoid wiping dev data
 TEST_DATABASE_URL = os.getenv(
     "TEST_DATABASE_URL", 
@@ -48,7 +47,6 @@ def db_session():
         yield db
     finally:
         db.close()
-        # Drop tables to clean up
         Base.metadata.drop_all(bind=test_engine)
 
 @pytest.fixture(scope="function")
