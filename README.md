@@ -1,6 +1,6 @@
 ## Transaction Analysis API 
 
-A decoupled RESTful API and ETL pipeline that ingests, processes, and analyzes large volumes of simulated transaction data.
+A decoupled RESTful API and ETL pipeline that ingests, processes, and analyses large volumes of simulated transaction data.
 
 ---
 
