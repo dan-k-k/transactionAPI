@@ -13,7 +13,6 @@ class Transaction(Base):
     timestamp = Column(DateTime, index=True)
     transaction_amount = Column(DECIMAL(10, 2))
 
-    # Explicit multi-column index for performance
     __table_args__ = (
         Index('idx_user_timestamp', 'user_id', 'timestamp'),
     )

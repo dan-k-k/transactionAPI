@@ -28,13 +28,11 @@ jobs:
         run: pip install ruff bandit
 
       - name: Run Ruff (Linting)
-        # The --output-format=github makes errors show up inline in the GitHub PR/Commit UI!
+        # The --output-format=github makes errors show up inline in the GitHub PR/Commit UI
         run: ruff check . --output-format=github
 
       - name: Run Bandit (Security)
-        # The -r means recursive (check all folders). 
-        # The -x ./tests excludes your test folder so it doesn't flag your dummy test database passwords.
-        run: bandit -r . -x ./tests
+        run: bandit -r . -x ./tests # r for recursive, x for exclude
 
   # JOB 2: CI (Run Tests)
   test:
@@ -76,11 +74,9 @@ jobs:
           pytest tests/ -v
 
   # JOB 3: CD (Build & Push Docker Image)
-  # This runs if the test job passes
   build-and-push:
     needs: test
     runs-on: ubuntu-latest
-    # Run CD: on the main branch (ignore PRs) || if I want to test a branch live
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     
     permissions:
@@ -118,7 +114,6 @@ jobs:
   # JOB 4: Provision Infrastructure
   provision:
     runs-on: ubuntu-latest
-    # Run provision: on the main branch (ignore PRs) || if I want to test a branch live
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || github.event_name == 'workflow_dispatch'
     outputs:
       ec2_public_ip: ${{ steps.set-outputs.outputs.ec2_public_ip }}

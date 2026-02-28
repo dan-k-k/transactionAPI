@@ -38,8 +38,6 @@ def run_bulk_generation(num_rows: int = 10000):
     """
     Generates a specified number of dummy transactions and ingests them into the database.
     """
-    # 1. Generate the data
     file_path = generate_bulk_csv(rows=num_rows)
-    # 2. Re-use your existing ingestion logic
     run_csv_pipeline(file_path=file_path, database_url=settings.get_database_url())
 

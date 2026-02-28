@@ -5,14 +5,14 @@ from app.gen_daily import run_nightly_generation
 from app.gen_bulk import run_bulk_generation
 
 if __name__ == "__main__":
-    # 1. Upload any bulk CSV to add to the database.
+    # Upload any bulk CSV to database.
     csv_processor = run_csv_pipeline.to_deployment(
         name="csv-processor",
         tags=["csv"],
         description="Processes uploaded CSVs in the background."
     )
     
-    # 2. Automatic full-day new data.
+    # Automatic full-day new data.
     nightly_generator = run_nightly_generation.to_deployment(
         name="daily-append-job",
         tags=["generation", "cron"],
@@ -20,7 +20,7 @@ if __name__ == "__main__":
         description="Appends yesterday's dummy transactions."
     )
 
-    # 3. On-demand bulk generation
+    # On-demand bulk generation (auto uploads to database).
     bulk_generator = run_bulk_generation.to_deployment(
         name="bulk-generation-job",
         tags=["generation", "manual"],

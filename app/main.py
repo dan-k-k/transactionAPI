@@ -43,11 +43,9 @@ app = FastAPI(
 @app.on_event("startup")
 async def startup_event(): print("Open Swagger UI here: http://localhost:8000/docs")
 
-# Dependency function for engine
 def get_engine():
     yield main_engine
 
-# Dependency function for database session
 def get_db():
     db = SessionLocal()
     try:
@@ -55,7 +53,6 @@ def get_db():
     finally:
         db.close()
 
-# This is the route for the root URL "/"
 @app.get("/")
 def read_root():
     return {"message": "Hello from the automated cloud!"}
@@ -72,7 +69,7 @@ async def upload_csv(file: UploadFile = File(...)):
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
             
-        # Fire and Forget (prefect deployment triggered)
+        # Prefect deployment
         asyncio.create_task(
             run_deployment(
                 name="CSV Ingestion Pipeline/csv-processor",
@@ -80,7 +77,7 @@ async def upload_csv(file: UploadFile = File(...)):
                     "file_path": file_path, 
                     "database_url": settings.get_database_url()
                 },
-                timeout=0 # Returns immediately, doesn't wait for the flow to finish
+                timeout=0 # Doesn't wait for the flow to finish
             )
         )
 
@@ -90,18 +87,7 @@ async def upload_csv(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Failed to queue file: {e}")
     
 @app.get("/summary/{user_id}", response_model=SummaryStats)
-def get_summary(
-    user_id: int, 
-    start_date: date, 
-    end_date: date, 
-    db: Session = Depends(get_db)
-):
-    """
-    Returns transaction summary statistics for a specific user within a date range.
-    - **user_id**: The ID of the user
-    - **start_date**: Start date for the analysis (YYYY-MM-DD)
-    - **end_date**: End date for the analysis (YYYY-MM-DD)
-    """
+def get_summary(user_id: int, start_date: date, end_date: date, db: Session = Depends(get_db)):
     # Validation check for date logic
     if start_date > end_date:
         raise HTTPException(
@@ -109,7 +95,6 @@ def get_summary(
             detail="start_date cannot be after end_date"
         )
     
-    # Parameterised query to prevent SQL injection
     query = text("""
     SELECT
         MAX(transaction_amount) as max_val,
@@ -143,10 +128,7 @@ def get_summary(
     
 @app.get("/analytics/risk-profile/{user_id}")
 def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
-    """
-    Generates an advanced financial risk profile for a user, calculating 
-    spending volatility, global ranking, and transaction velocity.
-    """
+    """A user's spending volatility, global ranking, and transaction velocity."""
     query = text("""
         WITH UserAggregates AS (
             SELECT 
@@ -208,7 +190,7 @@ def get_user_risk_profile(user_id: int, db: Session = Depends(get_db)):
     }
     
 def fetch_spend_trend_data(user_id: int, db: Session):
-    """Helper function to fetch and calculate accurate 7-day rolling averages."""
+    """Calc 7-day rolling averages."""
     query = text("""
         WITH date_range AS (
             SELECT MIN(DATE(timestamp)) as start_date, MAX(DATE(timestamp)) as end_date
@@ -243,7 +225,7 @@ def fetch_spend_trend_data(user_id: int, db: Session):
 
 @app.get("/analytics/spend-trend/{user_id}", response_model=list[SpendTrendItem])
 def get_user_spend_trend(user_id: int, db: Session = Depends(get_db)):
-    """Returns pure JSON of daily spend and a 7-day rolling average."""
+    """Daily spend and a 7-day rolling average."""
     results = fetch_spend_trend_data(user_id, db)
 
     if not results:
@@ -260,18 +242,15 @@ def get_user_spend_trend(user_id: int, db: Session = Depends(get_db)):
 
 @app.get("/dashboard/{user_id}", response_class=HTMLResponse)
 def get_user_dashboard(user_id: int, db: Session = Depends(get_db)):
-    """Dynamically generates an interactive Plotly HTML dashboard for the user."""
+    """Plotly HTML dashboard for the user."""
     results = fetch_spend_trend_data(user_id, db)
 
     if not results:
         return HTMLResponse(content=f"<h2>No data available to plot for User {user_id}</h2>", status_code=404)
 
-    # Unpack the data for Plotly
     dates = [row.spend_date for row in results]
     daily_totals = [row.daily_total for row in results]
     rolling_avgs = [row.rolling_7d_avg for row in results]
-
-    # Create the interactive figure
     fig = go.Figure()
     
     fig.add_trace(go.Bar(

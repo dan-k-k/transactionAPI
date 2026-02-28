@@ -50,7 +50,6 @@ def test_upload_performance():
 
 if __name__ == "__main__":
     try:
-        # Check if the server is running
         requests.get("http://localhost:8000/", timeout=10)
         test_upload_performance()
     except requests.exceptions.ConnectionError:

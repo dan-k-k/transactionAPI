@@ -1,7 +1,7 @@
 # docker-compose.yml
 # cloners: be aware that I use an override for web and worker local build
 services:
-  # 1. LIVE APP SERVICES
+  # Live app services
   db:
     image: postgres:15
     restart: always
@@ -60,7 +60,7 @@ services:
       db:
         condition: service_healthy
 
-  # 2. TEST SERVICES 
+  # Test services 
   test-db:
     image: postgres:15
     environment:
